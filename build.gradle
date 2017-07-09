@@ -1,6 +1,8 @@
 apply plugin: 'java-library'
+apply plugin: 'maven-publish'
 
 version = '0.1.0'
+group = "weld"
 
 repositories {
     jcenter()
@@ -63,4 +65,12 @@ jar {
       }
     }
     dependsOn compileWeld
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
 }
