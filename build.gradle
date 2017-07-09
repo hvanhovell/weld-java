@@ -1,0 +1,66 @@
+apply plugin: 'java-library'
+
+version = '0.1.0'
+
+repositories {
+    jcenter()
+}
+
+dependencies {
+    api 'org.scijava:native-lib-loader:2.1.5'
+    testImplementation 'junit:junit:4.12'
+}
+
+/**
+ * Configure the build script dependencies so we can use the NativeLibraryUtil to determine the
+ * location of the locally built native library.
+ */
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath group: 'org.scijava', name: 'native-lib-loader', version: '2.1.5'
+    }
+}
+
+/**
+ * Generate the JNI headers for java integration.
+ */
+task generateJniHeaders(type:Exec) {
+    def classpath = sourceSets.main.java.outputDir
+    def nativeIncludes = "src/native/include"
+    commandLine "javah", "-d", nativeIncludes, "-classpath", classpath, "weld.WeldJNI"
+    dependsOn classes
+}
+
+/**
+ * Compile the weld-java native library.
+ *
+ * In the future we might want to get cross compilation working. See:
+ * https://chr4.org/blog/2017/03/15/cross-compile-and-link-a-static-binary-on-macos-for-linux-with-cargo-and-rust/
+ * https://github.com/japaric/cross
+ */
+task compileWeld(type:Exec) {
+    commandLine "cargo", "build", "--release"
+}
+
+test {
+    systemProperty 'java.library.path', 'target/release/'
+}
+
+jar {
+    manifest {
+        attributes('Implementation-Title': project.name,
+                   'Implementation-Version': project.version)
+    }
+    // Make sure we copy the compiled native libary to the correct location in the jar file.
+    def platform = org.scijava.nativelib.NativeLibraryUtil.getArchitecture().name()
+    def libname = org.scijava.nativelib.NativeLibraryUtil.getPlatformLibraryName('weld_java')
+    into('META-INF/lib/' + platform) {
+      from {
+        'target/release/' + libname
+      }
+    }
+    dependsOn compileWeld
+}
