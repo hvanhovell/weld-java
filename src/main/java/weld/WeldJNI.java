@@ -14,16 +14,29 @@ class WeldJNI {
       NativeLoader.loadLibrary("weld_java");
     } catch (IOException e) {
       // Fallback for testing
-      
       System.loadLibrary("weld_java");
     }
   }
 
-  static native long weld_value_new(ByteBuffer buffer);
-
   static native long weld_value_new(long pointer);
 
   static native long weld_value_pointer(long handle);
+
+  static native boolean weld_get_boolean(long handle, long offset);
+
+  static native byte weld_get_byte(long handle, long offset);
+
+  static native int weld_get_int(long handle, long offset);
+
+  static native long weld_get_long(long handle, long offset);
+
+  static native int weld_get_float(long handle, long offset);
+
+  static native long weld_get_double(long handle, long offset);
+
+  static native ByteBuffer weld_get_buffer(long handle, int size);
+
+  static native long weld_get_buffer_pointer(ByteBuffer buffer);
 
   static native long weld_value_run(long handle);
 

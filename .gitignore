@@ -11,5 +11,7 @@ Cargo.lock
 
 .DS_Store
 .gradle
+.idea
 tmplib
 build
+*.iml

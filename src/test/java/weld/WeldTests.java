@@ -1,9 +1,13 @@
 package weld;
 
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 
 import org.junit.*;
 import org.junit.Assert;
+
+import static weld.WeldStruct.struct;
+import static weld.WeldVec.vec;
 
 /**
  * Tests for Weld-Java integration.
@@ -41,12 +45,10 @@ public class WeldTests {
    */
   @Test
   public void valueTest() {
-    final ByteBuffer buffer = ByteBuffer.allocateDirect(8);
-    buffer.putInt(23);
-    buffer.putInt(-1);
-    buffer.flip();
-    try(final WeldValue value = new WeldValue(buffer)) {
-      Assert.assertTrue(value.getPointer() > 0);
+    try(final WeldValue value = struct(23, -1).toValue()) {
+      final WeldStruct struct = value.struct();
+      Assert.assertEquals(struct.getInt(0), 23);
+      Assert.assertEquals(struct.getInt(4), -1);
     }
   }
 
@@ -57,7 +59,7 @@ public class WeldTests {
   public void compileTestFail() {
     String code = "foo";
     try {
-      final WeldModule module = WeldModule.compile(code);
+      WeldModule.compile(code);
       Assert.fail("Compilation should have failed.");
     } catch(final WeldException e) {
       Assert.assertEquals(e.getCode(), 1);
@@ -68,20 +70,34 @@ public class WeldTests {
   @Test
   public void compileAndRunSimpleTest() {
     String code = "|| i32(0.251 * 4.0)";
-    try(final WeldModule module = WeldModule.compile(code)) {
-      // TODO add a way to decode a result properly.
-      module.run(new WeldValue());
+    try(final WeldModule module = WeldModule.compile(code);
+        final WeldValue output = module.run(new WeldValue())) {
+      final WeldStruct struct = output.result(4);
+      Assert.assertEquals(struct.getInt(0), 1);
     }
   }
 
   @Test
   public void compileAndRunWithSingleArgumentTest() {
     String code = "|x:i32| {x + 1, x - 1}";
-    try(final WeldModule module = WeldModule.compile(code)) {
-      final ByteBuffer buffer = ByteBuffer.allocateDirect(4);
-      buffer.putInt(42);
-      buffer.flip();
-      module.run(new WeldValue(buffer));
+    try(final WeldModule module = WeldModule.compile(code);
+        final WeldValue value = struct(42).toValue();
+        final WeldValue output = module.run(value)) {
+          final WeldStruct struct = output.result(8);
+          Assert.assertEquals(struct.getInt(0), 43);
+          Assert.assertEquals(struct.getInt(4), 41);
+    }
+  }
+
+  @Test
+  public void compileAndRunWithTwoArgumentTest() {
+    String code = "|x:i32, y:i32| [x, y]";
+    try(final WeldModule module = WeldModule.compile(code);
+        final WeldValue value = struct(42, 76).toValue();
+        final WeldValue output = module.run(value)) {
+      final WeldVec vec = output.result(16).getVec(0,4);
+      Assert.assertEquals(vec.getInt(0), 42);
+      Assert.assertEquals(vec.getInt(4), 76);
     }
   }
 }

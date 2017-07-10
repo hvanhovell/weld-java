@@ -48,6 +48,8 @@ task compileWeld(type:Exec) {
 }
 
 test {
+    dependsOn cleanTest
+    testLogging.showStandardStreams = true
     systemProperty 'java.library.path', 'target/release/'
 }
 

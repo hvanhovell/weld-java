@@ -26,6 +26,7 @@ public class WeldModule implements AutoCloseable {
         conf.handle,
         input.handle,
         error.handle),
+        -1L,
         false);
     if (error.getCode() != 0) {
       final WeldException e = new WeldException(error);
