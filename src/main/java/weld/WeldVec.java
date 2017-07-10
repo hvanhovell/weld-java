@@ -12,7 +12,7 @@ public class WeldVec extends WeldObject {
    * Create a weld struct that pointing to a memory block allocated using
    * sun.misc.Unsafe or native code.
    */
-  WeldVec(long pointer, long size, int elementSize, ByteBuffer ref) {
+  public WeldVec(long pointer, long size, int elementSize, ByteBuffer ref) {
     super(pointer, size, ref);
     if (elementSize <= 0) {
       throw new IllegalArgumentException("ElementSize(" + elementSize + ") must be >= 0.");

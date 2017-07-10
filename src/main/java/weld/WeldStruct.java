@@ -10,7 +10,7 @@ public class WeldStruct extends WeldObject {
    * Create a weld struct that pointing to a memory block allocated using
    * sun.misc.Unsafe or native code.
    */
-  WeldStruct(long pointer, long size, ByteBuffer ref) {
+  public WeldStruct(long pointer, long size, ByteBuffer ref) {
     super(pointer, size, ref);
   }
 
