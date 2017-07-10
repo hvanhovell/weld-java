@@ -42,14 +42,17 @@ task generateJniHeaders(type:Exec) {
  * In the future we might want to get cross compilation working. See:
  * https://chr4.org/blog/2017/03/15/cross-compile-and-link-a-static-binary-on-macos-for-linux-with-cargo-and-rust/
  * https://github.com/japaric/cross
+ *
+ * FIXME weld_rt relies on the WELD_HOME var to be set. You currently need weld checked out, and
+ * WELD_HOME set for weld to work. The problem is made worse by the fact that the compilation
+ * succeeds(!!!) and weld only fails at runtime with the following message:
+ * LLVM ERROR: Program used external function '_get_runid' which could not be resolved!
  */
 task compileWeld(type:Exec) {
     commandLine "cargo", "build", "--release"
 }
 
 test {
-    dependsOn cleanTest
-    testLogging.showStandardStreams = true
     systemProperty 'java.library.path', 'target/release/'
 }
 

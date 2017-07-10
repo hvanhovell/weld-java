@@ -1,13 +1,9 @@
 package weld;
 
-import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
-
 import org.junit.*;
 import org.junit.Assert;
 
 import static weld.WeldStruct.struct;
-import static weld.WeldVec.vec;
 
 /**
  * Tests for Weld-Java integration.

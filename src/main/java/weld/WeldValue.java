@@ -2,7 +2,7 @@ package weld;
 
 import java.nio.ByteBuffer;
 
-import static java.nio.ByteBuffer.allocateDirect;
+import static weld.ByteBufferUtils.*;
 
 /**
  * This is a wrapper around the weld value object.
@@ -121,8 +121,8 @@ public class WeldValue implements AutoCloseable {
   }
 
   /**
-   * Convert the raw `WeldValue` to a 'struct'. This wraps the pointer of the weld value. Note
-   * that the result of a module run point to a struct, this means that you need to call
+   * Convert the raw `WeldValue` to a 'struct'. This wraps the pointer managed by the weld value.
+   * Note that the result of a module run points to a struct, this means that you need to call
    * `struct.getStruct(0, ..)` to work with the actual result, or use the `result(..)` method
    * instead.
    */
@@ -138,16 +138,5 @@ public class WeldValue implements AutoCloseable {
     // TODO(hvanhovell) figure out why I cannot set this in the module. The JVM crashes Every time
     // I try to do that.
     return size(8).struct().getStruct(0, resultSize);
-  }
-
-  /**
-   * Make sure the ByteBuffer we use is direct.
-   */
-  static ByteBuffer toDirect(final ByteBuffer input) {
-    if (input.isDirect()) {
-      return input;
-    }
-    final ByteBuffer direct = allocateDirect(input.remaining());
-    return direct.put(input);
   }
 }

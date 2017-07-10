@@ -1,7 +1,6 @@
 package weld;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
 /**
  * Wrapper for a weld struct value.
@@ -19,7 +18,7 @@ public class WeldStruct extends WeldObject {
    * Create a struct from a byte buffer.
    */
   public static WeldStruct struct(ByteBuffer buffer) {
-    final ByteBuffer direct = WeldValue.toDirect(buffer);
+    final ByteBuffer direct = ByteBufferUtils.toDirect(buffer);
     return new WeldStruct(WeldJNI.weld_get_buffer_pointer(direct), direct.limit(), direct);
   }
 
@@ -52,7 +51,7 @@ public class WeldStruct extends WeldObject {
     }
 
     // Create the struct
-    final ByteBuffer buffer = ByteBuffer.allocateDirect(size).order(ByteOrder.nativeOrder());
+    final ByteBuffer buffer = ByteBufferUtils.allocateDirect(size);
     for (Object value : values) {
       if (value instanceof Boolean) {
         final boolean condition = (Boolean) value;

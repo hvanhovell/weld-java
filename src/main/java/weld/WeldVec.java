@@ -1,8 +1,10 @@
 package weld;
 
 import java.nio.ByteBuffer;
-import java.nio.ByteOrder;
 
+/**
+ * Wrapper for a weld vec value.
+ */
 public class WeldVec extends WeldObject {
   private final int elementSize;
 
@@ -40,7 +42,7 @@ public class WeldVec extends WeldObject {
    * Create a vector from a byte buffer.
    */
   public static WeldVec vec(ByteBuffer buffer, int elementSize) {
-    final ByteBuffer direct = WeldValue.toDirect(buffer);
+    final ByteBuffer direct = ByteBufferUtils.toDirect(buffer);
     return new WeldVec(WeldJNI.weld_get_buffer_pointer(direct), direct.limit(), elementSize, direct);
   }
 
@@ -48,7 +50,7 @@ public class WeldVec extends WeldObject {
    * Create a vector from a boolean array.
    */
   public static WeldVec vec(final boolean... values) {
-    final ByteBuffer direct = ByteBuffer.allocateDirect(values.length).order(ByteOrder.nativeOrder());
+    final ByteBuffer direct = ByteBufferUtils.allocateDirect(values.length);
     for (final boolean value : values) {
       direct.put(value ? (byte) 1 : (byte) 0);
     }
@@ -67,7 +69,7 @@ public class WeldVec extends WeldObject {
    * Create a vector from a byte array.
    */
   public static WeldVec vec(final byte... values) {
-    final ByteBuffer direct = ByteBuffer.allocateDirect(values.length).order(ByteOrder.nativeOrder());
+    final ByteBuffer direct = ByteBufferUtils.allocateDirect(values.length);
     direct.put(values).flip();
     return vec(direct, 1);
   }
@@ -76,7 +78,7 @@ public class WeldVec extends WeldObject {
    * Create a vector from a int array.
    */
   public static WeldVec vec(final int... values) {
-    final ByteBuffer direct = ByteBuffer.allocateDirect(values.length * 4).order(ByteOrder.nativeOrder());
+    final ByteBuffer direct = ByteBufferUtils.allocateDirect(values.length * 4);
     direct.asIntBuffer().put(values).flip();
     return vec(direct, 4);
   }
@@ -85,7 +87,7 @@ public class WeldVec extends WeldObject {
    * Create a vector from a float array.
    */
   public static WeldVec vec(final float... values) {
-    final ByteBuffer direct = ByteBuffer.allocateDirect(values.length * 4).order(ByteOrder.nativeOrder());
+    final ByteBuffer direct = ByteBufferUtils.allocateDirect(values.length * 4);
     direct.asFloatBuffer().put(values).flip();
     return vec(direct, 4);
   }
@@ -94,7 +96,7 @@ public class WeldVec extends WeldObject {
    * Create a vector from a long array.
    */
   public static WeldVec vec(final long... values) {
-    final ByteBuffer direct = ByteBuffer.allocateDirect(values.length * 8).order(ByteOrder.nativeOrder());
+    final ByteBuffer direct = ByteBufferUtils.allocateDirect(values.length * 8);
     direct.asLongBuffer().put(values).flip();
     return vec(direct, 8);
   }
@@ -103,7 +105,7 @@ public class WeldVec extends WeldObject {
    * Create a vector from a double array.
    */
   public static WeldVec vec(final double... values) {
-    final ByteBuffer direct = ByteBuffer.allocateDirect(values.length * 8).order(ByteOrder.nativeOrder());
+    final ByteBuffer direct = ByteBufferUtils.allocateDirect(values.length * 8);
     direct.asDoubleBuffer().put(values).flip();
     return vec(direct, 8);
   }
@@ -112,7 +114,7 @@ public class WeldVec extends WeldObject {
    * Create a vector from a struct array.
    */
   public static WeldVec vec(final WeldStruct... values) {
-    final ByteBuffer direct = ByteBuffer.allocateDirect(values.length * 8).order(ByteOrder.nativeOrder());
+    final ByteBuffer direct = ByteBufferUtils.allocateDirect(values.length * 8);
     for (final WeldStruct value : values) {
       direct.putLong(value.pointer);
     }
@@ -124,7 +126,7 @@ public class WeldVec extends WeldObject {
    * Create a vector from a vec array.
    */
   public static WeldVec vec(final WeldVec... values) {
-    final ByteBuffer direct = ByteBuffer.allocateDirect(values.length * 16).order(ByteOrder.nativeOrder());
+    final ByteBuffer direct = ByteBufferUtils.allocateDirect(values.length * 16);
     for (final WeldVec value : values) {
       direct.putLong(value.pointer);
       direct.putLong(value.size);
