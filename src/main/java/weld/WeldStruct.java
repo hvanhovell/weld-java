@@ -15,18 +15,18 @@ public class WeldStruct extends WeldObject {
   }
 
   /**
+   * Convert the struct into a WeldValue.
+   */
+  public WeldValue toValue() {
+    return new WeldValue(pointer(), size());
+  }
+
+  /**
    * Create a struct from a byte buffer.
    */
   public static WeldStruct struct(ByteBuffer buffer) {
     final ByteBuffer direct = ByteBufferUtils.toDirect(buffer);
     return new WeldStruct(WeldJNI.weld_get_buffer_pointer(direct), direct.limit(), direct);
-  }
-
-  /**
-   * Convert the struct into a WeldValue.
-   */
-  public WeldValue toValue() {
-    return new WeldValue(pointer, size);
   }
 
   /**
@@ -49,6 +49,7 @@ public class WeldStruct extends WeldObject {
         throw new IllegalArgumentException("Unsupported struct value[" + i + "]: " + value);
       }
     }
+    System.out.println(size);
 
     // Create the struct
     final ByteBuffer buffer = ByteBufferUtils.allocateDirect(size);
@@ -67,11 +68,11 @@ public class WeldStruct extends WeldObject {
       } else if (value instanceof Double) {
         buffer.putDouble((Double) value);
       } else if (value instanceof WeldStruct) {
-        buffer.putLong(((WeldStruct) value).pointer);
+        buffer.putLong(((WeldStruct) value).pointer());
       } else if (value instanceof WeldVec) {
         final WeldVec vec = (WeldVec) value;
-        buffer.putLong(vec.pointer);
-        buffer.putLong(vec.size);
+        buffer.putLong(vec.pointer());
+        buffer.putLong(vec.numElements());
       }
     }
     buffer.flip();

@@ -35,7 +35,7 @@ public class WeldVec extends WeldObject {
    * Get the number of elements in the vector.
    */
   public long numElements() {
-    return this.size / this.elementSize;
+    return this.size() / this.elementSize;
   }
 
   /**
@@ -116,7 +116,7 @@ public class WeldVec extends WeldObject {
   public static WeldVec vec(final WeldStruct... values) {
     final ByteBuffer direct = ByteBufferUtils.allocateDirect(values.length * 8);
     for (final WeldStruct value : values) {
-      direct.putLong(value.pointer);
+      direct.putLong(value.pointer());
     }
     direct.flip();
     return vec(direct, 8);
@@ -128,8 +128,8 @@ public class WeldVec extends WeldObject {
   public static WeldVec vec(final WeldVec... values) {
     final ByteBuffer direct = ByteBufferUtils.allocateDirect(values.length * 16);
     for (final WeldVec value : values) {
-      direct.putLong(value.pointer);
-      direct.putLong(value.size);
+      direct.putLong(value.pointer());
+      direct.putLong(value.numElements());
     }
     direct.flip();
     return vec(direct, 16);

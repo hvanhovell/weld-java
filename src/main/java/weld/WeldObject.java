@@ -9,12 +9,12 @@ public abstract class WeldObject {
   /**
    * Pointer to the underlying data.
    */
-  final long pointer;
+  private final long pointer;
 
   /**
    * Size of the object in bytes.
    */
-  final long size;
+  private final long size;
 
   /**
    * Reference to the created byte buffer, to prevent the direct buffer from being garbage
@@ -29,7 +29,7 @@ public abstract class WeldObject {
   WeldObject(long pointer, long size, ByteBuffer ref) {
     super();
     if (size < 0) {
-      throw new IllegalArgumentException();
+      throw new IllegalArgumentException("Object size(" + size + ") must be >= 0.");
     }
     this.pointer = pointer;
     this.size = size;
@@ -43,6 +43,13 @@ public abstract class WeldObject {
     assert size >= 0: "size (" + size + ") should be >= 0";
     assert offset >= 0 : "offset (" + offset + ") should be >= 0";
     assert offset + size <= this.size : "size + offset (" + (offset + size) + ") should be <= " + this.size;
+  }
+
+  /**
+   * Get the pointer to the backing data.
+   */
+  public long pointer() {
+    return pointer;
   }
 
   /**
@@ -85,7 +92,9 @@ public abstract class WeldObject {
   public WeldVec getVec(int offset, int elementSize) {
     assertValidAccess(offset, 16);
     long pointer = WeldJNI.weld_get_long(this.pointer, offset);
+    System.out.println("VEC PTR: " + pointer);
     long size = WeldJNI.weld_get_long(this.pointer, offset + 8) * elementSize;
+    System.out.println("VEC SIZE: " + size);
     return new WeldVec(pointer, size, elementSize, null);
   }
 
