@@ -62,7 +62,7 @@ jar {
                    'Implementation-Version': project.version)
     }
     // Make sure we copy the compiled native libary to the correct location in the jar file.
-    def platform = org.scijava.nativelib.NativeLibraryUtil.getArchitecture().name()
+    def platform = org.scijava.nativelib.NativeLibraryUtil.getArchitecture().name().toLowerCase()
     def libname = org.scijava.nativelib.NativeLibraryUtil.getPlatformLibraryName('weld_java')
     into('META-INF/lib/' + platform) {
       from {

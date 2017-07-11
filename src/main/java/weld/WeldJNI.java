@@ -1,8 +1,8 @@
 package weld;
 
-import java.io.IOException;
 import java.nio.ByteBuffer;
-import org.scijava.nativelib.NativeLoader;
+
+import org.scijava.nativelib.NativeLibraryUtil;
 
 class WeldJNI {
   private WeldJNI() {
@@ -10,9 +10,7 @@ class WeldJNI {
   }
 
   static {
-    try {
-      NativeLoader.loadLibrary("weld_java");
-    } catch (IOException e) {
+    if (!NativeLibraryUtil.loadNativeLibrary(WeldJNI.class, "weld_java")) {
       // Fallback for testing
       System.loadLibrary("weld_java");
     }
