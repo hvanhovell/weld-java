@@ -1,55 +1,47 @@
 package weld;
 
-import java.nio.ByteBuffer;
-
 /**
  * Base class for complex weld values.
+ *
+ * Note that
  */
 public abstract class WeldObject {
   /**
-   * Pointer to the underlying data.
+   * Address of the underlying data.
    */
-  private final long pointer;
+  private final long address;
 
   /**
-   * Size of the object in bytes.
+   * Size of object in bytes.
    */
   private final long size;
-
-  /**
-   * Reference to the created byte buffer, to prevent the direct buffer from being garbage
-   * collected.
-   */
-  private final ByteBuffer ref;
 
   /**
    * Create a weld object that points to a memory block allocated using
    * sun.misc.Unsafe or native code.
    */
-  WeldObject(long pointer, long size, ByteBuffer ref) {
+  WeldObject(long address, long size) {
     super();
     if (size < 0) {
-      throw new IllegalArgumentException("Object size(" + size + ") must be >= 0.");
+      throw new IllegalArgumentException("Size(" + size + ") must be >= 0.");
     }
-    this.pointer = pointer;
+    this.address = address;
     this.size = size;
-    this.ref = ref;
   }
 
   /**
-   * Check if the memory access is valid.
+   * Translate an offset index to its address.
    */
-  private void assertValidAccess(int offset, int size) {
-    assert size >= 0: "size (" + size + ") should be >= 0";
-    assert offset >= 0 : "offset (" + offset + ") should be >= 0";
-    assert offset + size <= this.size : "size + offset (" + (offset + size) + ") should be <= " + this.size;
+  long offsetToAddress(int offset, int bytesToRead) {
+    assert offset >= 0 && offset + bytesToRead <= size : "offset(" + offset + ") should be >= 0 and < " + size;
+    return address + offset;
   }
 
   /**
-   * Get the pointer to the backing data.
+   * Get the address to the backing data.
    */
-  public long pointer() {
-    return pointer;
+  public long address() {
+    return address;
   }
 
   /**
@@ -59,48 +51,56 @@ public abstract class WeldObject {
     return size;
   }
 
+  /**
+   * Get the boolean value at the given offset.
+   */
   public boolean getBoolean(int offset) {
-    assertValidAccess(offset, 1);
-    return WeldJNI.weld_get_boolean(this.pointer, offset);
+    return Platform.getByte(offsetToAddress(offset, 1)) == (byte) 1;
   }
 
+  /**
+   * Get the byte value at the given offset.
+   */
   public byte getByte(int offset) {
-    assertValidAccess(offset, 1);
-    return WeldJNI.weld_get_byte(this.pointer, offset);
+    return Platform.getByte(offsetToAddress(offset,1 ));
   }
 
+  /**
+   * Get the int value at the given offset.
+   */
   public int getInt(int offset) {
-    assertValidAccess(offset, 4);
-    return WeldJNI.weld_get_int(this.pointer, offset);
+    return Platform.getInt(offsetToAddress(offset, 4));
   }
 
+  /**
+   * Get the long value at the given offset.
+   */
   public long getLong(int offset) {
-    assertValidAccess(offset, 8);
-    return WeldJNI.weld_get_long(this.pointer, offset);
+    return Platform.getLong(offsetToAddress(offset, 8));
   }
 
+  /**
+   * Get the float value at the given offset.
+   */
   public float getFloat(int offset) {
-    assertValidAccess(offset, 4);
-    return WeldJNI.weld_get_float(this.pointer, offset);
+    return Platform.getFloat(offsetToAddress(offset, 4));
   }
 
+  /**
+   * Get the double value at the given offset.
+   */
   public double getDouble(int offset) {
-    assertValidAccess(offset, 8);
-    return WeldJNI.weld_get_double(this.pointer, offset);
+    return Platform.getDouble(offsetToAddress(offset, 8));
   }
 
+  /**
+   * Get the vector at the given index. Note that in case of a struct this will consume two
+   * indexes, because a struct is 8 byte aligned.
+   */
   public WeldVec getVec(int offset, int elementSize) {
-    assertValidAccess(offset, 16);
-    long pointer = WeldJNI.weld_get_long(this.pointer, offset);
-    System.out.println("VEC PTR: " + pointer);
-    long size = WeldJNI.weld_get_long(this.pointer, offset + 8) * elementSize;
-    System.out.println("VEC SIZE: " + size);
-    return new WeldVec(pointer, size, elementSize, null);
-  }
-
-  public WeldStruct getStruct(int offset, long size) {
-    assertValidAccess(offset, 8);
-    long pointer = WeldJNI.weld_get_long(this.pointer, offset);
-    return new WeldStruct(pointer, size, null);
+    long ptrAddress = offsetToAddress(offset, 16);
+    long vecAddress = Platform.getLong(ptrAddress);
+    long vecElements = Platform.getLong(ptrAddress + 8);
+    return new WeldVec(vecAddress, vecElements * elementSize, elementSize);
   }
 }

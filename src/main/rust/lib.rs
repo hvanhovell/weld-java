@@ -6,7 +6,7 @@ use libc::c_void;
 
 use jni::JNIEnv;
 use jni::objects::{JClass, JString, JByteBuffer};
-use jni::sys::{jstring, jboolean, jbyte, jlong, jint, jfloat, jdouble, jobject};
+use jni::sys::{jstring, jlong, jint};
 use jni::strings::*;
 
 use weld::*;
@@ -25,56 +25,6 @@ pub unsafe extern "C" fn Java_weld_WeldJNI_weld_1value_1pointer(_: JNIEnv, _: JC
     let value = valuePtr as *const WeldValue;
     let data = weld_value_data(value);
     data as jlong
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub unsafe extern "C" fn Java_weld_WeldJNI_weld_1get_1boolean(_: JNIEnv, _: JClass, valuePtr: jlong, offset: jlong) -> jboolean {
-    let data = (valuePtr + offset) as *const u8;
-    *data
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub unsafe extern "C" fn Java_weld_WeldJNI_weld_1get_1byte(_: JNIEnv, _: JClass, valuePtr: jlong, offset: jlong) -> jbyte {
-    let data = (valuePtr + offset) as *const i8;
-    *data
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub unsafe extern "C" fn Java_weld_WeldJNI_weld_1get_1int(_: JNIEnv, _: JClass, valuePtr: jlong, offset: jlong) -> jint {
-    let data = (valuePtr + offset) as *const i32;
-    *data
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub unsafe extern "C" fn Java_weld_WeldJNI_weld_1get_1long(_: JNIEnv, _: JClass, valuePtr: jlong, offset: jlong) -> jlong {
-    let data = (valuePtr + offset) as *const i64;
-    *data
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub unsafe extern "C" fn Java_weld_WeldJNI_weld_1get_1float(_: JNIEnv, _: JClass, valuePtr: jlong, offset: jlong) -> jfloat {
-    let data = (valuePtr + offset) as *const f32;
-    *data
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub unsafe extern "C" fn Java_weld_WeldJNI_weld_1get_1double(_: JNIEnv, _: JClass, valuePtr: jlong, offset: jlong) -> jdouble {
-    let data = (valuePtr + offset) as *const f64;
-    *data
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
-pub unsafe extern "C" fn Java_weld_WeldJNI_weld_1get_1buffer(env: JNIEnv, _: JClass, valuePtr: jlong, size: jint) -> jobject {
-    let len = size as usize;
-    let data = std::slice::from_raw_parts_mut(valuePtr as *mut u8, len);
-    env.new_direct_byte_buffer(data).unwrap().into_inner()
 }
 
 #[no_mangle]

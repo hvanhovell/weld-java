@@ -74,21 +74,10 @@ public class WeldValue implements AutoCloseable {
   }
 
   /**
-   * Get the pointer to the data this value encapsulates.
+   * Get the address to the data this value encapsulates.
    */
   public long getPointer() {
     return WeldJNI.weld_value_pointer(this.handle);
-  }
-
-  /**
-   * Get a byte buffer pointing to the data this value encapsulates.
-   */
-  public ByteBuffer getBuffer() {
-    checkSized();
-    if (this.size > Integer.MAX_VALUE) {
-      throw new WeldException("Cannot create ByteBuffer from a WeldValue that is larger than Int.Max.");
-    }
-    return WeldJNI.weld_get_buffer(getPointer(), (int) this.size);
   }
 
   /**
@@ -99,44 +88,20 @@ public class WeldValue implements AutoCloseable {
   }
 
   /**
-   * Check if the value has a valid size.
+   * Convert the raw `WeldValue` to a 'struct'.
    */
-  private void checkSized() {
+  public WeldStruct struct() {
     if (size < 0) {
       throw new IllegalArgumentException("Value has no valid size.");
     }
-  }
-
-  /**
-   * Create a sized weld value. This is only allowed when the value has no size yet.
-   */
-  public WeldValue size(long size) {
-    if (this.size >= 0) {
-      throw new IllegalStateException("Size has already been set");
-    }
-    if (size < 0) {
-      throw new IllegalArgumentException("Size (" + size + ") must be >= 0.");
-    }
-    return new WeldValue(handle, size);
-  }
-
-  /**
-   * Convert the raw `WeldValue` to a 'struct'. This wraps the pointer managed by the weld value.
-   * Note that the result of a module run points to a struct, this means that you need to call
-   * `struct.getStruct(0, ..)` to work with the actual result, or use the `result(..)` method
-   * instead.
-   */
-  public WeldStruct struct() {
-    checkSized();
-    return new WeldStruct(getPointer(), size, null);
+    return new WeldStruct(getPointer(), size);
   }
 
   /**
    * Get the result of a weld module run.
    */
-  public WeldStruct result(int resultSize) {
-    // TODO(hvanhovell) figure out why I cannot set this in the module. The JVM crashes Every time
-    // I try to do that.
-    return size(8).struct().getStruct(0, resultSize);
+  public WeldStruct result(int size) {
+    // The result of a module run, is a address to a struct address; so we need to dereference it.
+    return new WeldStruct(getPointer(), size);
   }
 }

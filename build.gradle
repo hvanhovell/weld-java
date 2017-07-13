@@ -52,6 +52,13 @@ task compileWeld(type:Exec) {
     commandLine "cargo", "build", "--release"
 }
 
+compileJava {
+    // Shut-up the compiler about sun.misc.*
+    options.fork = true
+    options.forkOptions.executable = 'javac'
+    options.compilerArgs << "-XDignore.symbol.file"
+}
+
 test {
     dependsOn cleanTest
     testLogging.showStandardStreams = true

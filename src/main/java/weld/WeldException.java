@@ -1,5 +1,8 @@
 package weld;
 
+/**
+ * Exception thrown by weld during module compilation or execution.
+ */
 public class WeldException extends RuntimeException {
   private final int code;
 
