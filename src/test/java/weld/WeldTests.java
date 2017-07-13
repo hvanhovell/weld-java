@@ -251,4 +251,22 @@ public class WeldTests {
       Assert.assertEquals(4, vec.getStruct(32).getInt(8));
     }
   }
+
+  @Test
+  public void compileAndRun1ArgsVecsRet1() {
+    String code = "|ys:vec[i64]| result(for(ys, appender[{i64, i8, i32}], |b, i, y| merge(b, {y, i8(y), i32(i)})))";
+    try(final WeldModule module = WeldModule.compile(code);
+        final WeldValue value = struct(vec(1L, 99L)).toValue();
+        final WeldValue output = module.run(value)) {
+      final WeldStruct result = output.result(16);
+      final WeldVec vec = result.getVec(0, 16);
+      Assert.assertEquals(2, vec.numElements());
+      Assert.assertEquals(1L, vec.getStruct(0).getLong(0));
+      Assert.assertEquals((byte) 1, vec.getStruct(0).getByte(8));
+      Assert.assertEquals(0, vec.getStruct(0).getInt(12));
+      Assert.assertEquals(99L, vec.getStruct(16).getLong(0));
+      Assert.assertEquals((byte) 99, vec.getStruct(16).getByte(8));
+      Assert.assertEquals(1, vec.getStruct(16).getInt(12));
+    }
+  }
 }
