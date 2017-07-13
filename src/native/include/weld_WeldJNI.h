@@ -25,62 +25,6 @@ JNIEXPORT jlong JNICALL Java_weld_WeldJNI_weld_1value_1pointer
 
 /*
  * Class:     weld_WeldJNI
- * Method:    weld_get_boolean
- * Signature: (JJ)Z
- */
-JNIEXPORT jboolean JNICALL Java_weld_WeldJNI_weld_1get_1boolean
-  (JNIEnv *, jclass, jlong, jlong);
-
-/*
- * Class:     weld_WeldJNI
- * Method:    weld_get_byte
- * Signature: (JJ)B
- */
-JNIEXPORT jbyte JNICALL Java_weld_WeldJNI_weld_1get_1byte
-  (JNIEnv *, jclass, jlong, jlong);
-
-/*
- * Class:     weld_WeldJNI
- * Method:    weld_get_int
- * Signature: (JJ)I
- */
-JNIEXPORT jint JNICALL Java_weld_WeldJNI_weld_1get_1int
-  (JNIEnv *, jclass, jlong, jlong);
-
-/*
- * Class:     weld_WeldJNI
- * Method:    weld_get_long
- * Signature: (JJ)J
- */
-JNIEXPORT jlong JNICALL Java_weld_WeldJNI_weld_1get_1long
-  (JNIEnv *, jclass, jlong, jlong);
-
-/*
- * Class:     weld_WeldJNI
- * Method:    weld_get_float
- * Signature: (JJ)I
- */
-JNIEXPORT jint JNICALL Java_weld_WeldJNI_weld_1get_1float
-  (JNIEnv *, jclass, jlong, jlong);
-
-/*
- * Class:     weld_WeldJNI
- * Method:    weld_get_double
- * Signature: (JJ)J
- */
-JNIEXPORT jlong JNICALL Java_weld_WeldJNI_weld_1get_1double
-  (JNIEnv *, jclass, jlong, jlong);
-
-/*
- * Class:     weld_WeldJNI
- * Method:    weld_get_buffer
- * Signature: (JI)Ljava/nio/ByteBuffer;
- */
-JNIEXPORT jobject JNICALL Java_weld_WeldJNI_weld_1get_1buffer
-  (JNIEnv *, jclass, jlong, jint);
-
-/*
- * Class:     weld_WeldJNI
  * Method:    weld_get_buffer_pointer
  * Signature: (Ljava/nio/ByteBuffer;)J
  */
