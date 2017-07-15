@@ -3,6 +3,8 @@ package weld;
 import org.junit.*;
 import org.junit.Assert;
 
+import java.util.concurrent.*;
+
 import static weld.WeldStruct.struct;
 import static weld.WeldVec.vec;
 
@@ -171,16 +173,7 @@ public class WeldTests {
 
   @Test
   public void compileAndRun2ArgsVecRet2() {
-    String code = "|x:vec[i32], y: i32|result(for(x, appender[i64], |b, i, n| merge(b, i64(y) + i + i64(n) * 2L)))";
-    try(final WeldModule module = WeldModule.compile(code);
-        final WeldValue value = struct(vec(1, 3, 4), 5).toValue();
-        final WeldValue output = module.run(value)) {
-      final WeldStruct result = output.result(16);
-      final WeldVec vec = result.getVec(0,8);
-      Assert.assertEquals(7L, vec.getLong(0));
-      Assert.assertEquals(12L, vec.getLong(8));
-      Assert.assertEquals(15L, vec.getLong(16));
-    }
+    doCompileAndRun2ArgsVecRet2();
   }
 
   @Test
@@ -267,6 +260,47 @@ public class WeldTests {
       Assert.assertEquals(99L, vec.getStruct(16).getLong(0));
       Assert.assertEquals((byte) 99, vec.getStruct(16).getByte(8));
       Assert.assertEquals(1, vec.getStruct(16).getInt(12));
+    }
+  }
+
+  @Ignore
+  public void compileAndRunConcurrentPrograms() {
+    // This currently blows up by either causing a segfault or a freeing a non allocated pointer.
+    final int threads = Runtime.getRuntime().availableProcessors() + 1;
+    final ExecutorService executor = Executors.newFixedThreadPool(threads);
+    try {
+      for (int i = 0; i < threads * 2; i++) {
+        executor.submit(this::doCompileAndRun2ArgsVecRet2);
+      }
+    } finally {
+      executor.shutdown();
+    }
+  }
+
+  private void doCompileAndRun2ArgsVecRet2() {
+    String code = "|x:vec[i32], y: i32|result(for(x, appender[i64], |b, i, n| merge(b, i64(y) + i + i64(n) * 2L)))";
+    try(final WeldModule module = WeldModule.compile(code);
+        final WeldValue value = struct(vec(1, 3, 4), 5).toValue();
+        final WeldValue output = module.run(value)) {
+      final WeldStruct result = output.result(16);
+      final WeldVec vec = result.getVec(0,8);
+      Assert.assertEquals(7L, vec.getLong(0));
+      Assert.assertEquals(12L, vec.getLong(8));
+      Assert.assertEquals(15L, vec.getLong(16));
+    }
+  }
+
+  @Test
+  public void compileAndRunSerialPrograms() {
+    String code1 = "|x: vec[i32], y: i32|result(for(x, appender[i64], |b, i, n| merge(b, i64(y) + i + i64(n) * 2L)))";
+    String code2 = "|z: vec[i64]| result(for(z, merger[i64, +], |b, i, n| merge(b, n)))";
+    try(final WeldModule module1 = WeldModule.compile(code1);
+        final WeldModule module2 = WeldModule.compile(code2);
+        final WeldValue value = struct(vec(1, 3, 4), 5).toValue();
+        final WeldValue intermediate = module1.run(value);
+        final WeldValue output = module2.run(intermediate)) {
+      final WeldStruct result = output.result(8);
+      Assert.assertEquals(34L, result.getLong(0));
     }
   }
 }

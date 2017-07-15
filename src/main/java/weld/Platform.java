@@ -27,14 +27,11 @@ class Platform {
    * Register an AutoCloseable for automatic clean-up as soon as it gets garbage collected.
    */
   public static void registerForCleanUp(AutoCloseable closeable) {
-    Cleaner.create(closeable, new Runnable() {
-      @Override
-      public void run() {
-        try {
-          closeable.close();
-        } catch (Exception e) {
-          throw new RuntimeException(e);
-        }
+    Cleaner.create(closeable, () -> {
+      try {
+        closeable.close();
+      } catch (Exception e) {
+        throw new RuntimeException(e);
       }
     });
   }
