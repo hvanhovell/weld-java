@@ -49,10 +49,17 @@ public class WeldTests {
 
   @Test
   public void closeIdempotentTest() {
-    // Make sure close is idempotent.
+    // Make sure close is idempotent, and does not throw horrific errors.
     final WeldValue value = struct(23, -1).toValue();
     value.close();
     value.close();
+  }
+
+  @Test(expected = AssertionError.class)
+  public void useAfterCloseTest() {
+    final WeldValue value = struct(23, -1).toValue();
+    value.close();
+    value.getPointer();
   }
 
   @Test
