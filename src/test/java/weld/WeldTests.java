@@ -279,7 +279,7 @@ public class WeldTests {
   }
 
   @Ignore
-  public void compileAndRunConcurrentPrograms() {
+  public void compileAndRunConcurrent() {
     // This currently blows up by either causing a segfault or a freeing a non allocated pointer.
     final int threads = Runtime.getRuntime().availableProcessors() + 1;
     final ExecutorService executor = Executors.newFixedThreadPool(threads);
@@ -289,6 +289,26 @@ public class WeldTests {
       }
     } finally {
       executor.shutdown();
+    }
+  }
+
+  @Test
+  public void compileAndRunRepeated() {
+    String code = "|z: vec[i64]| result(for(z, merger[i64, +], |b, i, n| merge(b, n)))";
+    long sum = 0;
+    long[] data = new long[10000];
+    for (int i = 0; i < data.length; i++) {
+      data[i] = i * i;
+      sum += i * i;
+    }
+    try(final WeldModule module = WeldModule.compile(code)) {
+      for (int i = 0; i < 1000; i++) {
+        try(final WeldStruct arguments = struct(vec(data));
+            final WeldValue input = arguments.toValue();
+            final WeldValue output = module.run(input)) {
+          Assert.assertEquals(sum, output.result(8).getLong(0));
+        }
+      }
     }
   }
 
