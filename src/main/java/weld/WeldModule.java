@@ -1,14 +1,12 @@
 package weld;
 
-public class WeldModule implements AutoCloseable {
-  private final long handle;
-
+public class WeldModule extends WeldManaged {
   private WeldModule(final long handle) {
-    super();
-    this.handle = handle;
+    super(handle);
   }
 
-  public void close() {
+  @Override
+  protected void doClose() {
     WeldJNI.weld_module_free(this.handle);
   }
 
@@ -19,6 +17,7 @@ public class WeldModule implements AutoCloseable {
   }
 
   public WeldValue run(final WeldConf conf, final WeldValue input) {
+    checkAccess();
     final WeldError error = new WeldError();
     final WeldValue output = new WeldValue(
       WeldJNI.weld_module_run(

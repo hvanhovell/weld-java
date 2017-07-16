@@ -30,7 +30,7 @@ public final class WeldStruct extends WeldObject implements AutoCloseable {
    * memory location it points to.
    */
   @Override
-  public void close() throws Exception {
+  public synchronized void close() {
     if (freeOnClose) {
       Platform.freeMemory(address());
       freeOnClose = false;

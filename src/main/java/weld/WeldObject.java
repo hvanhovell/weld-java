@@ -2,8 +2,6 @@ package weld;
 
 /**
  * Base class for complex weld values.
- *
- * Note that
  */
 public abstract class WeldObject {
   /**

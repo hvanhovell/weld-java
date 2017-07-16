@@ -5,23 +5,24 @@ package weld;
  *
  * Note that this object must be closed after usage.
  */
-public class WeldConf implements AutoCloseable {
-  final long handle;
+public class WeldConf extends WeldManaged {
 
   public WeldConf() {
-    super();
-    this.handle = WeldJNI.weld_conf_new();
+    super(WeldJNI.weld_conf_new());
   }
 
-  public void close() {
+  @Override
+  protected void doClose() {
     WeldJNI.weld_conf_free(this.handle);
   }
 
   public String get(final String key) {
+    checkAccess();
     return WeldJNI.weld_conf_get(this.handle, key);
   }
 
   public void set(final String key, final String value) {
+    checkAccess();
     WeldJNI.weld_conf_set(this.handle, key, value);
   }
 }

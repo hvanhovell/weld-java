@@ -48,6 +48,14 @@ public class WeldTests {
   }
 
   @Test
+  public void closeIdempotentTest() {
+    // Make sure close is idempotent.
+    final WeldValue value = struct(23, -1).toValue();
+    value.close();
+    value.close();
+  }
+
+  @Test
   public void structTest() {
     final WeldStruct input = struct(4, vec(1L, 3L, 4L));
     try (final WeldValue value = input.toValue()) {
