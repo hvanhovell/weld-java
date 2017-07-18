@@ -79,6 +79,21 @@ public class WeldTests {
   }
 
   @Test
+  public void vec2Test() {
+    // Collectively allocated vectors & struct.
+    try (final WeldStruct input = struct(42, vec(1), vec((byte) 0))) {
+      Assert.assertEquals(40, input.size());
+    }
+
+    // Separately allocated vectors & struct.
+    try (final WeldStruct s1 = struct(vec(1));
+         final WeldStruct s2 = struct(vec((byte) 0));
+         final WeldStruct input = struct(42, s1.getVec(0, 4), s2.getVec(0, 1))) {
+      Assert.assertEquals(40, input.size());
+    }
+  }
+
+  @Test
   public void vecTest() {
     final WeldStruct bitstruct = struct(vec(true, true, false));
     final WeldVec bitvec = bitstruct.getVec(0, 1);
@@ -147,7 +162,7 @@ public class WeldTests {
       WeldModule.compile(code);
       Assert.fail("Compilation should have failed.");
     } catch(final WeldException e) {
-      Assert.assertEquals(e.getCode(), 1);
+      Assert.assertEquals(e.getCode(), 3);
       Assert.assertEquals(e.getMessage(), "Undefined symbol foo in uniquify");
     }
   }
@@ -289,26 +304,6 @@ public class WeldTests {
       }
     } finally {
       executor.shutdown();
-    }
-  }
-
-  @Test
-  public void compileAndRunRepeated() {
-    String code = "|z: vec[i64]| result(for(z, merger[i64, +], |b, i, n| merge(b, n)))";
-    long sum = 0;
-    long[] data = new long[10000];
-    for (int i = 0; i < data.length; i++) {
-      data[i] = i * i;
-      sum += i * i;
-    }
-    try(final WeldModule module = WeldModule.compile(code)) {
-      for (int i = 0; i < 1000; i++) {
-        try(final WeldStruct arguments = struct(vec(data));
-            final WeldValue input = arguments.toValue();
-            final WeldValue output = module.run(input)) {
-          Assert.assertEquals(sum, output.result(8).getLong(0));
-        }
-      }
     }
   }
 

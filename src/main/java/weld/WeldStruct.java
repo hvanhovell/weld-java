@@ -59,8 +59,10 @@ public final class WeldStruct extends WeldObject implements AutoCloseable {
         headerSize += 1;
       } else if (value instanceof Integer || value instanceof Float) {
         headerSize = ceil4(headerSize) + 4;
-      } else if (value instanceof Long || value instanceof Double || value instanceof WeldVec) {
+      } else if (value instanceof Long || value instanceof Double) {
         headerSize = ceil8(headerSize) + 8;
+      } else if (value instanceof WeldVec) {
+        headerSize = ceil8(headerSize) + 16;
       } else if (value instanceof WeldVec.Builder) {
         headerSize = ceil8(headerSize) + 16;
         vectorSize += ceil8(((WeldVec.Builder) value).size());
