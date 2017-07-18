@@ -333,4 +333,36 @@ public class WeldTests {
       Assert.assertEquals(34L, result.getLong(0));
     }
   }
+
+  @Test
+  public void compileAndRunPassBuilder() {
+    String initializeCode = "||merger[i64, +]";
+    String updateCode = "|m: merger[i64, +], x: vec[i64]| for(x, m, |b, i, n| merge(b, n))";
+    String finalizeCode = "|m: merger[i64, +]| result(m)";
+    try(final WeldModule initialize = WeldModule.compile(initializeCode);
+        final WeldModule update = WeldModule.compile(updateCode);
+        final WeldModule finalize = WeldModule.compile(finalizeCode);
+        final WeldValue empty = new WeldValue();
+        final WeldValue buffer = initialize.run(empty)) {
+      // Get the buffer pointer.
+      long address = buffer.result(8).getLong(0);
+
+      // Update the buffer in 10 increments.
+      long expected = 0;
+      for (int i = 0; i < 10; i++) {
+        try (final WeldStruct arguments = struct(address, vec(1L + i, 2L + i, 3L + i));
+             final WeldValue input = arguments.toValue()) {
+          final WeldValue output = update.run(input);
+          Assert.assertEquals(address, output.result(8).getLong(0));
+          output.close();
+          expected += 6 + 3 * i;
+        }
+      }
+
+      try (final WeldValue input = struct(address).toValue();
+           final WeldValue output = finalize.run(input)) {
+        Assert.assertEquals(expected, output.result(8).getLong(0));
+      }
+    }
+  }
 }
