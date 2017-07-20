@@ -1,8 +1,12 @@
 package weld;
 
+import weld.types.StructType;
+import weld.types.Type;
+
 import java.nio.ByteBuffer;
 
 import static weld.ByteBufferUtils.*;
+import static weld.types.StructType.structOf;
 
 /**
  * This is a wrapper around the weld value object.
@@ -11,7 +15,7 @@ import static weld.ByteBufferUtils.*;
  */
 public class WeldValue extends WeldManaged {
   /**
-   * Size of the value in bytes. -1 if the size is unknown.
+   * Size vecOf the value in bytes. -1 if the size is unknown.
    */
   private final long size;
 
@@ -62,7 +66,7 @@ public class WeldValue extends WeldManaged {
   }
 
   /**
-   * Get the size of the weld value in bytes.
+   * Get the size vecOf the weld value in bytes.
    */
   public long size() {
     checkAccess();
@@ -86,21 +90,18 @@ public class WeldValue extends WeldManaged {
   }
 
   /**
-   * Convert the raw `WeldValue` to a 'struct'.
+   * Get the result vecOf a weld module run.
    */
-  public WeldStruct struct() {
+  public WeldStruct result(StructType type) {
     checkAccess();
-    if (size < 0) {
-      throw new IllegalArgumentException("Value has no valid size.");
-    }
-    return new WeldStruct(getPointer(), size);
+    return new WeldStruct(getPointer(), type);
   }
 
   /**
-   * Get the result of a weld module run.
+   * Get the result vecOf a weld module run.
    */
-  public WeldStruct result(int size) {
+  public WeldStruct result(Type... types) {
     checkAccess();
-    return new WeldStruct(getPointer(), size);
+    return new WeldStruct(getPointer(), structOf(types));
   }
 }

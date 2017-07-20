@@ -1,39 +1,41 @@
 package weld;
 
+import weld.types.PrimitiveType;
+import weld.types.Type;
+import weld.types.VecType;
+
 /**
- * Base class for complex weld values.
+ * A typed base class for complex weld values.
  */
 public abstract class WeldObject {
   /**
-   * Address of the underlying data.
+   * Address vecOf the underlying data.
    */
   private final long address;
-
-  /**
-   * Size of object in bytes.
-   */
-  private final long size;
 
   /**
    * Create a weld object that points to a memory block allocated using
    * sun.misc.Unsafe or native code.
    */
-  WeldObject(long address, long size) {
+  WeldObject(long address) {
     super();
-    if (size < 0) {
-      throw new IllegalArgumentException("Size(" + size + ") must be >= 0.");
-    }
     this.address = address;
-    this.size = size;
   }
 
   /**
    * Translate an offset index to its address.
    */
-  long offsetToAddress(int offset, int bytesToRead) {
-    assert offset >= 0 && offset + bytesToRead <= size : "offset(" + offset + ") should be >= 0 and < " + size;
-    return address + offset;
+  long indexToAddress(int index, Type type) {
+    assert index >= 0 && index < numElements() :  "Index(" + index + ") must be >= 0 and < " + numElements();
+    final Type actualField = getElementType(index);
+    assert type.equals(actualField) :"Expected a " + type + " at index(" + index + "), but found a '" + actualField + "' instead.";
+    return indexToAddress(index);
   }
+
+  /**
+   * Translate an offset index to its address.
+   */
+  abstract long indexToAddress(int index);
 
   /**
    * Get the address to the backing data.
@@ -43,62 +45,76 @@ public abstract class WeldObject {
   }
 
   /**
-   * Get the size of object in bytes.
+   * Get the size vecOf object in bytes.
    */
-  public long size() {
-    return size;
-  }
+  public abstract long size();
 
   /**
-   * Get the boolean value at the given offset.
+   * Get the number vecOf elements in the object.
    */
-  public boolean getBoolean(int offset) {
-    return Platform.getByte(offsetToAddress(offset, 1)) == (byte) 1;
+  public abstract long numElements();
+
+  /**
+   * Get the element type at the given index.
+   */
+  public abstract Type getElementType(int index);
+
+  /**
+   * Get the type vecOf the weld object.
+   */
+  public abstract Type type();
+
+  /**
+   * Get the boolean value at the given index.
+   */
+  public boolean getBoolean(int index) {
+    return Platform.getByte(indexToAddress(index, PrimitiveType.bool)) == (byte) 1;
   }
 
   /**
    * Get the byte value at the given offset.
    */
-  public byte getByte(int offset) {
-    return Platform.getByte(offsetToAddress(offset,1 ));
+  public byte getByte(int index) {
+    return Platform.getByte(indexToAddress(index, PrimitiveType.i8));
   }
 
   /**
    * Get the int value at the given offset.
    */
-  public int getInt(int offset) {
-    return Platform.getInt(offsetToAddress(offset, 4));
+  public int getInt(int index) {
+    return Platform.getInt(indexToAddress(index, PrimitiveType.i32));
   }
 
   /**
    * Get the long value at the given offset.
    */
-  public long getLong(int offset) {
-    return Platform.getLong(offsetToAddress(offset, 8));
+  public long getLong(int index) {
+    return Platform.getLong(indexToAddress(index, PrimitiveType.i64));
   }
 
   /**
    * Get the float value at the given offset.
    */
-  public float getFloat(int offset) {
-    return Platform.getFloat(offsetToAddress(offset, 4));
+  public float getFloat(int index) {
+    return Platform.getFloat(indexToAddress(index, PrimitiveType.f32));
   }
 
   /**
    * Get the double value at the given offset.
    */
-  public double getDouble(int offset) {
-    return Platform.getDouble(offsetToAddress(offset, 8));
+  public double getDouble(int index) {
+    return Platform.getDouble(indexToAddress(index, PrimitiveType.f64));
   }
 
   /**
-   * Get the vector at the given index. Note that in case of a struct this will consume two
-   * indexes, because a struct is 8 byte aligned.
+   * Get the vector at the given index.
    */
-  public WeldVec getVec(int offset, int elementSize) {
-    long ptrAddress = offsetToAddress(offset, 16);
-    long vecAddress = Platform.getLong(ptrAddress);
-    long vecElements = Platform.getLong(ptrAddress + 8);
-    return new WeldVec(vecAddress, vecElements * elementSize, elementSize);
+  public WeldVec getVec(int index) {
+    final Type elementType = getElementType(index);
+    assert elementType instanceof VecType : "Expected a vector at index(" + index + "), but found a '" + elementType + "' instead.";
+    final long address = indexToAddress(index);
+    final long pointer = Platform.getLong(address);
+    final long numElements = Platform.getLong(address + 8);
+    return new WeldVec(pointer, numElements, (VecType) elementType);
   }
 }
