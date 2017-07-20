@@ -107,6 +107,13 @@ public abstract class WeldObject {
   }
 
   /**
+   * Get the pointer at the given offset.
+   */
+  public long getPointer(int index) {
+    return Platform.getLong(indexToAddress(index, PrimitiveType.Pointer));
+  }
+
+  /**
    * Get the vector at the given index.
    */
   public WeldVec getVec(int index) {

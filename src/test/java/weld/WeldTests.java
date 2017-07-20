@@ -337,7 +337,7 @@ public class WeldTests {
     }
   }
 
-  @Ignore
+  @Test
   public void compileAndRunPassBuilder() {
     String initializeCode = "||merger[i64, +]";
     String updateCode = "|m: merger[i64, +], x: vec[i64]| for(x, m, |b, i, n| merge(b, n))";
@@ -348,7 +348,7 @@ public class WeldTests {
         final WeldValue empty = new WeldValue();
         final WeldValue buffer = initialize.run(empty)) {
       // Get the buffer pointer.
-      long address = buffer.result(i64).getLong(0);
+      long address = buffer.result(Pointer).getPointer(0);
 
       // Update the buffer in 10 increments.
       long expected = 0;
@@ -356,7 +356,7 @@ public class WeldTests {
         try (final WeldStruct arguments = struct(address, vec(1L + i, 2L + i, 3L + i));
              final WeldValue input = arguments.toValue()) {
           final WeldValue output = update.run(input);
-          Assert.assertEquals(address, output.result(i64).getLong(0));
+          Assert.assertEquals(address, output.result(Pointer).getPointer(0));
           output.close();
           expected += 6 + 3 * i;
         }
