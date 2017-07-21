@@ -5,9 +5,6 @@ import weld.types.StructType;
 import weld.types.Type;
 import weld.types.VecType;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Wrapper for a weld struct value.
  */
