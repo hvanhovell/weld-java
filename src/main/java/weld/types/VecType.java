@@ -1,9 +1,11 @@
 package weld.types;
 
+import java.io.Serializable;
+
 /**
  * Vector type.
  */
-public final class VecType implements Type {
+public final class VecType implements Type, Serializable {
   /**
    * Type vecOf the element vecOf the vector.
    */

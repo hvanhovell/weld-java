@@ -1,8 +1,9 @@
 package weld.types;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
-public class StructType implements Type {
+public class StructType implements Type, Serializable {
   private final Type[] fieldTypes;
 
   private int size = -1;
