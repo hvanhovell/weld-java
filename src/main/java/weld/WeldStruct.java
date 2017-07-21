@@ -74,6 +74,36 @@ public final class WeldStruct extends WeldObject implements AutoCloseable {
   }
 
   /**
+   * Turn the weld struct into an array of values.
+   */
+  public Object[] toArray() {
+    final Object[] result = new Object[(int) numElements()];
+    for (int i = 0; i < numElements(); i++) {
+      final Type fieldType = type.fieldType(i);
+      if (fieldType == PrimitiveType.bool) {
+        result[i] = getBoolean(i);
+      } else if (fieldType == PrimitiveType.i8) {
+        result[i] = getByte(i);
+      } else if (fieldType == PrimitiveType.i32) {
+        result[i] = getInt(i);
+      } else if (fieldType == PrimitiveType.i64) {
+        result[i] = getLong(i);
+      } else if (fieldType == PrimitiveType.f32) {
+        result[i] = getFloat(i);
+      } else if (fieldType == PrimitiveType.f64) {
+        result[i] = getDouble(i);
+      } else if (fieldType == PrimitiveType.Pointer) {
+        result[i] = getPointer(i);
+      } else if (fieldType instanceof VecType) {
+        result[i] = getVec(i);
+      } else {
+        throw new IllegalArgumentException("Unsupported struct field type[" + i + "]: " + fieldType);
+      }
+    }
+    return result;
+  }
+
+  /**
    * Convert the struct into a WeldValue.
    */
   public WeldValue toValue() {
@@ -81,41 +111,38 @@ public final class WeldStruct extends WeldObject implements AutoCloseable {
   }
 
   /**
-   * Create a struct from an argument array. Note that this builds an aligned struct, this means
-   * that a value will always be written to an offset that aligns with its size.
+   * Create a struct from an argument array. Note that structs are not support.
    */
   public static WeldStruct struct(final Object... values) {
     // Determine the struct type.
     // Note that we need to align the offset to the size vecOf the value vecOf we are about to write.
-    final List<Type> fieldTypes = new ArrayList<>();
+    final Type[] fieldTypes = new Type[values.length];
     long vectorSize = 0;
     for (int i = 0; i < values.length; i++) {
       final Object value = values[i];
       if (value instanceof Boolean) {
-        fieldTypes.add(PrimitiveType.bool);
+        fieldTypes[i] = PrimitiveType.bool;
       } else if (value instanceof Byte) {
-        fieldTypes.add(PrimitiveType.i8);
+        fieldTypes[i] = PrimitiveType.i8;
       } else if (value instanceof Integer) {
-        fieldTypes.add(PrimitiveType.i32);
+        fieldTypes[i] = PrimitiveType.i32;
       } else if (value instanceof Float) {
-        fieldTypes.add(PrimitiveType.f32);
+        fieldTypes[i] = PrimitiveType.f32;
       } else if (value instanceof Long) {
-        fieldTypes.add(PrimitiveType.i64);
+        fieldTypes[i] = PrimitiveType.i64;
       } else if (value instanceof Double) {
-        fieldTypes.add(PrimitiveType.f64);
-      } else if (value instanceof WeldStruct) {
-        fieldTypes.add(((WeldStruct) value).type());
+        fieldTypes[i] = PrimitiveType.f64;
       } else if (value instanceof WeldVec) {
-        fieldTypes.add(((WeldVec) value).type());
+        fieldTypes[i] = ((WeldVec) value).type();
       } else if (value instanceof WeldVec.Builder) {
         final WeldVec.Builder builder = (WeldVec.Builder) value;
-        fieldTypes.add(VecType.vecOf(builder.type));
+        fieldTypes[i] = VecType.vecOf(builder.type);
         vectorSize += ceil8(builder.size());
       } else {
         throw new IllegalArgumentException("Unsupported struct value[" + i + "]: " + value);
       }
     }
-    final StructType type = StructType.structOf(fieldTypes.toArray(new Type[fieldTypes.size()]));
+    final StructType type = StructType.structOf(fieldTypes);
 
     // Create the struct
     final long address = Platform.allocateMemory(type.size() + vectorSize);
