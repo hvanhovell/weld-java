@@ -28,7 +28,7 @@ public abstract class WeldObject {
   long indexToAddress(int index, Type type) {
     assert index >= 0 && index < numElements() :  "Index(" + index + ") must be >= 0 and < " + numElements();
     final Type actualField = getElementType(index);
-    assert type.equals(actualField) :"Expected a " + type + " at index(" + index + "), but found a '" + actualField + "' instead.";
+    assert type.equals(actualField) :"Expected a '" + type + "' at index(" + index + "), but found a '" + actualField + "' instead.";
     return indexToAddress(index);
   }
 

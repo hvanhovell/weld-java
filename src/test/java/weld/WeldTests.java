@@ -337,7 +337,7 @@ public class WeldTests {
   }
 
   @Test
-  public void compileAndRunPassBuilder() {
+  public void compileAndRunPassBuilder1() {
     String initializeCode = "||merger[i64, +]";
     String updateCode = "|m: merger[i64, +], x: vec[i64]| for(x, m, |b, i, n| merge(b, n))";
     String finalizeCode = "|m: merger[i64, +]| result(m)";
@@ -368,12 +368,45 @@ public class WeldTests {
     }
   }
 
-  @Test(expected = WeldException.class)
-  public void compileFailureOnMerger() {
-    // This fails with the following error:
-    // Compile error: module:1021:27: error: '%fn0_tmp' defined with type '%v0*'
-    // store i64 %t.t27, i64*  %fn0_tmp#1
-    String code = "|index: i32, m: merger[i64, +]| {[index], [result(m)]}";
-    WeldModule.compile(code);
+  @Test
+  public void compileAndRunPassBuilder2() {
+    String code1 = "|index: i32| let m = merger[i64, +]; merge(m, 7L)";
+    String code2 = "|index: i32, m: merger[i64, +]| let mm = merge(m, 10L); {[index, 1], [result(mm), 1L]}";
+    try(final WeldModule initialize = WeldModule.compile(code1);
+        final WeldModule finalize = WeldModule.compile(code2);
+        final WeldStruct arguments1 = struct(2);
+        final WeldValue input1 = arguments1.toValue();
+        final WeldValue appender = initialize.run(input1)) {
+      long address = appender.result(Pointer).getPointer(0);
+      try (final WeldStruct arguments2 = struct(2, address);
+           final WeldValue input2 = arguments2.toValue();
+           final WeldValue output = finalize.run(input2)) {
+        final WeldStruct struct = output.result(vecOf(i32), vecOf(i64));
+        Assert.assertEquals(2, struct.getVec(0).getInt(0));
+        Assert.assertEquals(1, struct.getVec(0).getInt(1));
+        Assert.assertEquals(17L, struct.getVec(1).getLong(0));
+        Assert.assertEquals(1L, struct.getVec(1).getLong(1));
+      }
+    }
+  }
+
+  @Ignore
+  public void compileAndRunIncrementalAppender() {
+    // TODO you cannot pass an appender between programs.
+    String code1 = "|| merge(appender[i64], 88L)";
+    String code2 = "|a: appender[i64]| result(a)";
+    try(final WeldModule initialize = WeldModule.compile(code1);
+        final WeldModule finalize = WeldModule.compile(code2);
+        final WeldValue empty = new WeldValue();
+        final WeldValue appender = initialize.run(empty)) {
+      // Get the buffer pointer.
+      long address = appender.result(Pointer).getPointer(0);
+
+      try (final WeldStruct arguments = struct(address);
+           final WeldValue input = arguments.toValue();
+           final WeldValue output = finalize.run(input)) {
+        Assert.assertEquals(88L, output.result(vecOf(i64)).getLong(0));
+      }
+    }
   }
 }
