@@ -367,4 +367,13 @@ public class WeldTests {
       }
     }
   }
+
+  @Test(expected = WeldException.class)
+  public void compileFailureOnMerger() {
+    // This fails with the following error:
+    // Compile error: module:1021:27: error: '%fn0_tmp' defined with type '%v0*'
+    // store i64 %t.t27, i64*  %fn0_tmp#1
+    String code = "|index: i32, m: merger[i64, +]| {[index], [result(m)]}";
+    WeldModule.compile(code);
+  }
 }
