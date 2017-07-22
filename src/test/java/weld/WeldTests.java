@@ -296,9 +296,8 @@ public class WeldTests {
     }
   }
 
-  @Ignore
+  @Test
   public void compileAndRunConcurrent() {
-    // This currently blows up by either causing a segfault or a freeing a non allocated pointer.
     final int threads = Runtime.getRuntime().availableProcessors() + 1;
     final ExecutorService executor = Executors.newFixedThreadPool(threads);
     try {
