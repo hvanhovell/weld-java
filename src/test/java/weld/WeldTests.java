@@ -5,16 +5,38 @@ import org.junit.Assert;
 
 import java.util.concurrent.*;
 
+import static weld.StructType.structOf;
 import static weld.WeldStruct.struct;
-import static weld.WeldVec.vec;
-import static weld.types.PrimitiveType.*;
-import static weld.types.VecType.vecOf;
-import static weld.types.StructType.structOf;
+import static weld.VecType.vecOf;
 
 /**
  * Tests for Weld-Java integration.
  */
 public class WeldTests {
+  private WeldType i8 = i8$.MODULE$;
+  private WeldType i32 = i32$.MODULE$;
+  private WeldType i64 = i64$.MODULE$;
+  private WeldType pointer = Pointer$.MODULE$;
+
+  private WeldVec.Builder vec(boolean... values) {
+    return WeldVec.vec(values);
+  }
+  private WeldVec.Builder vec(byte... values) {
+    return WeldVec.vec(values);
+  }
+  private WeldVec.Builder vec(int... values) {
+    return WeldVec.vec(values);
+  }
+  private WeldVec.Builder vec(long... values) {
+    return WeldVec.vec(values);
+  }
+  private WeldVec.Builder vec(float... values) {
+    return WeldVec.vec(values);
+  }
+  private WeldVec.Builder vec(double... values) {
+    return WeldVec.vec(values);
+  }
+
   /**
    * Test the conf class.
    */
@@ -36,8 +58,8 @@ public class WeldTests {
   @Test
   public void errorTest() {
     try(final WeldError error = new WeldError()) {
-      Assert.assertEquals(0, error.getCode());
-      Assert.assertEquals("Success", error.getMessage());
+      Assert.assertEquals(0, error.code());
+      Assert.assertEquals("Success", error.message());
     }
   }
 
@@ -165,7 +187,7 @@ public class WeldTests {
       WeldModule.compile(code);
       Assert.fail("Compilation should have failed.");
     } catch(final WeldException e) {
-      Assert.assertEquals(e.getCode(), 3);
+      Assert.assertEquals(e.code(), 3);
       Assert.assertEquals(e.getMessage(), "Undefined symbol foo in uniquify");
     }
   }
@@ -174,7 +196,7 @@ public class WeldTests {
   public void compileAndRun0ArgsScalarRet() {
     String code = "|| i32(0.251 * 4.0)";
     try(final WeldModule module = WeldModule.compile(code);
-        final WeldValue output = module.run(new WeldValue())) {
+        final WeldValue output = module.run(WeldValue.empty())) {
       final WeldStruct struct = output.result(i32);
       Assert.assertEquals(1, struct.getInt(0));
     }
@@ -344,10 +366,10 @@ public class WeldTests {
     try(final WeldModule initialize = WeldModule.compile(initializeCode);
         final WeldModule update = WeldModule.compile(updateCode);
         final WeldModule finalize = WeldModule.compile(finalizeCode);
-        final WeldValue empty = new WeldValue();
+        final WeldValue empty = WeldValue.empty();
         final WeldValue buffer = initialize.run(empty)) {
       // Get the buffer pointer.
-      long address = buffer.result(Pointer).getPointer(0);
+      long address = buffer.result(pointer).getPointer(0);
 
       // Update the buffer in 10 increments.
       long expected = 0;
@@ -355,7 +377,7 @@ public class WeldTests {
         try (final WeldStruct arguments = struct(address, vec(1L + i, 2L + i, 3L + i));
              final WeldValue input = arguments.toValue()) {
           final WeldValue output = update.run(input);
-          Assert.assertEquals(address, output.result(Pointer).getPointer(0));
+          Assert.assertEquals(address, output.result(pointer).getPointer(0));
           output.close();
           expected += 6 + 3 * i;
         }
@@ -377,7 +399,7 @@ public class WeldTests {
         final WeldStruct arguments1 = struct(2);
         final WeldValue input1 = arguments1.toValue();
         final WeldValue appender = initialize.run(input1)) {
-      long address = appender.result(Pointer).getPointer(0);
+      long address = appender.result(pointer).getPointer(0);
       try (final WeldStruct arguments2 = struct(2, address);
            final WeldValue input2 = arguments2.toValue();
            final WeldValue output = finalize.run(input2)) {
@@ -386,26 +408,6 @@ public class WeldTests {
         Assert.assertEquals(1, struct.getVec(0).getInt(1));
         Assert.assertEquals(17L, struct.getVec(1).getLong(0));
         Assert.assertEquals(1L, struct.getVec(1).getLong(1));
-      }
-    }
-  }
-
-  @Ignore
-  public void compileAndRunIncrementalAppender() {
-    // TODO you cannot pass an appender between programs.
-    String code1 = "|| merge(appender[i64], 88L)";
-    String code2 = "|a: appender[i64]| result(a)";
-    try(final WeldModule initialize = WeldModule.compile(code1);
-        final WeldModule finalize = WeldModule.compile(code2);
-        final WeldValue empty = new WeldValue();
-        final WeldValue appender = initialize.run(empty)) {
-      // Get the buffer pointer.
-      long address = appender.result(Pointer).getPointer(0);
-
-      try (final WeldStruct arguments = struct(address);
-           final WeldValue input = arguments.toValue();
-           final WeldValue output = finalize.run(input)) {
-        Assert.assertEquals(88L, output.result(vecOf(i64)).getLong(0));
       }
     }
   }
