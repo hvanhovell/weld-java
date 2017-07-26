@@ -1,4 +1,4 @@
-apply plugin: 'java-library'
+apply plugin: 'scala'
 apply plugin: 'maven-publish'
 
 version = '0.1.0'
@@ -6,10 +6,12 @@ group = "weld"
 
 repositories {
     jcenter()
+    mavenCentral()
 }
 
 dependencies {
-    api 'org.scijava:native-lib-loader:2.1.5'
+    compile 'org.scala-lang:scala-library:2.11.8'
+    compile 'org.scijava:native-lib-loader:2.1.5'
     testImplementation 'junit:junit:4.12'
 }
 
@@ -30,9 +32,9 @@ buildscript {
  * Generate the JNI headers for java integration.
  */
 task generateJniHeaders(type:Exec) {
-    def classpath = sourceSets.main.java.outputDir
+    def classpath = sourceSets.main.scala.outputDir
     def nativeIncludes = "src/native/include"
-    commandLine "javah", "-d", nativeIncludes, "-classpath", classpath, "weld.WeldJNI"
+    commandLine "javah", "-d", nativeIncludes, "-classpath", classpath, "weld.WeldJNI\$"
     dependsOn classes
 }
 
@@ -50,13 +52,6 @@ task generateJniHeaders(type:Exec) {
  */
 task compileWeld(type:Exec) {
     commandLine "cargo", "build", "--release"
-}
-
-compileJava {
-    // Shut-up the compiler about sun.misc.*
-    options.fork = true
-    options.forkOptions.executable = 'javac'
-    options.compilerArgs << "-XDignore.symbol.file"
 }
 
 test {
