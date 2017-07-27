@@ -68,11 +68,6 @@ object f32 extends PrimitiveType("f32", 4)
 object f64 extends PrimitiveType("f64", 8)
 
 /**
- * Opaque pointer. This is used to pass weld structures between plans.
- */
-object Pointer extends PrimitiveType("ptr", 8)
-
-/**
  * Vector type.
  */
 case class VecType(elementType: WeldType) extends WeldType {
@@ -118,13 +113,25 @@ object StructType {
 
 case class FieldInfo(fieldType: WeldType, offset: Int)
 
-case class DictType(key: WeldType, value: WeldType) extends WeldType {
+trait PointerType extends WeldType {
+  override def alignment: Int = 8
+  override def size: Int = 8
+}
+
+/**
+ * Opaque pointer. This is used to pass weld structures between plans.
+ */
+object Pointer extends PointerType {
+  override def name: String = "ptr"
+}
+
+case class DictType(key: WeldType, value: WeldType) extends PointerType {
   override def name: String = s"dict[$key, $value]"
   override def alignment: Int = 8
   override def size: Int = 8
 }
 
-trait BuilderType extends WeldType {
+trait BuilderType extends PointerType {
   def inputType: WeldType
   def outputType: WeldType
   override def size: Int = 8

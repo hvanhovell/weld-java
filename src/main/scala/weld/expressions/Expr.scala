@@ -7,6 +7,7 @@ trait ExprLike extends Serializable {
   def dataType: WeldType
   def children: Seq[Expr]
   lazy val desc: String = IndentedDescBuilder().append(this).desc
+  lazy val flatDesc: String = SimpleDescBuilder().append(this).desc
   def buildDesc(builder: DescBuilder):Unit
   override def toString: String = desc
 }
@@ -192,7 +193,7 @@ case class Lambda(parameters: Seq[Parameter], body: Expr) extends Expr {
   override def dataType: WeldType = body.dataType
   override def children: Seq[Expr] = parameters :+ body
   override def buildDesc(builder: DescBuilder): Unit = {
-    builder.append("|", ", ", "|", parameters).newLine(2).append(body)
+    builder.append("|", ", ", "|", parameters).newLine().append(body)
   }
 }
 

@@ -30,7 +30,7 @@ trait DescBuilder {
     this
   }
 
-  def newLine(increment: Int = 0): DescBuilder
+  def newLine(): DescBuilder
 
   def newBuilder(increment: Int): DescBuilder
 
@@ -40,10 +40,10 @@ trait DescBuilder {
 
 case class IndentedDescBuilder(builder: StringBuilder = new StringBuilder, indent: Int = 0) extends DescBuilder {
   override def newBuilder(increment: Int): DescBuilder = copy(indent = indent + increment)
-  override def newLine(increment: Int): DescBuilder = newBuilder(increment).append("\n").append(" " * (indent + increment))
+  override def newLine(): DescBuilder = append("\n").append(" " * indent)
 }
 
-case class SimpleDescBuilder(builder: StringBuilder) extends DescBuilder {
+case class SimpleDescBuilder(builder: StringBuilder = new StringBuilder) extends DescBuilder {
   override def newBuilder(increment: Int): DescBuilder = this
-  override def newLine(increment: Int): DescBuilder = append(" ")
+  override def newLine(): DescBuilder = append(" ")
 }
