@@ -7,12 +7,12 @@ import scala.annotation.varargs
  */
 trait WeldType {
   /**
-   * Get the name vecOf data type.
+   * Get the name of data type.
    */
   def name: String
 
   /**
-   * Get the alignment vecOf the data type.
+   * Get the alignment of the data type.
    */
   def alignment: Int
 
@@ -24,47 +24,53 @@ trait WeldType {
   override def toString: String = name
 }
 
+object UnknownType extends WeldType {
+  override def name: String = "UNKNOWN"
+  override def alignment: Int = 0
+  override def size: Int = 0
+}
+
 /**
  * A weld primitive type.
  */
-sealed abstract class Primitive(val name: String, val size: Int) extends WeldType {
+sealed abstract class PrimitiveType(val name: String, val size: Int) extends WeldType {
   override def alignment: Int = size
 }
 
 /**
  * Boolean.
  */
-object bool extends Primitive("bool", 1)
+object bool extends PrimitiveType("bool", 1)
 
 /**
  * 8-bit signed integer.
  */
-object i8 extends Primitive("i8", 1)
+object i8 extends PrimitiveType("i8", 1)
 
 /**
  * 32-bit signed integer.
  */
-object i32 extends Primitive("i32", 4)
+object i32 extends PrimitiveType("i32", 4)
 
 /**
  * 64-bit signed integer.
  */
-object i64 extends Primitive("i64", 8)
+object i64 extends PrimitiveType("i64", 8)
 
 /**
  * 32-bit floating point.
  */
-object f32 extends Primitive("f32", 4)
+object f32 extends PrimitiveType("f32", 4)
 
 /**
  * 64-bit floating point.
  */
-object f64 extends Primitive("f64", 8)
+object f64 extends PrimitiveType("f64", 8)
 
 /**
  * Opaque pointer. This is used to pass weld structures between plans.
  */
-object Pointer extends Primitive("ptr", 8)
+object Pointer extends PrimitiveType("ptr", 8)
 
 /**
  * Vector type.
@@ -111,3 +117,59 @@ object StructType {
 }
 
 case class FieldInfo(fieldType: WeldType, offset: Int)
+
+case class DictType(key: WeldType, value: WeldType) extends WeldType {
+  override def name: String = s"dict[$key, $value]"
+  override def alignment: Int = 8
+  override def size: Int = 8
+}
+
+trait BuilderType extends WeldType {
+  def inputType: WeldType
+  def outputType: WeldType
+  override def size: Int = 8
+  override def alignment: Int = 8
+}
+
+sealed trait Aggregator {
+  def name: String
+}
+
+object PlusAggregator extends Aggregator {
+  override def name: String = "+"
+}
+
+object TimesAggregator extends Aggregator {
+  override def name: String = "*"
+}
+
+trait AggregatingBuilderType extends BuilderType {
+  def aggregator: Aggregator
+}
+
+case class Appender(inputType: WeldType) extends BuilderType {
+  override def outputType: WeldType = VecType(inputType)
+  override def name: String = s"appender[${outputType.name}]"
+}
+
+case class GroupMerger(keyType: WeldType, valueType: WeldType) extends BuilderType {
+  override def inputType: WeldType = StructType.structOf(keyType, valueType)
+  override def outputType: WeldType = DictType(keyType, VecType(valueType))
+  override def name: String = s"groupmerger[${keyType.name}, ${valueType.name}]"
+}
+
+case class Merger(inputType: WeldType, aggregator: Aggregator) extends AggregatingBuilderType {
+  override def outputType: WeldType = inputType
+  override def name: String = s"merger[${inputType.name}, ${aggregator.name}]"
+}
+
+case class DictMerger(keyType: WeldType, valueType: WeldType, aggregator: Aggregator) extends AggregatingBuilderType {
+  override def inputType: WeldType = StructType.structOf(keyType, valueType)
+  override def outputType: WeldType = DictType(keyType, valueType)
+  override def name: String = s"dictmerger[${keyType.name}, ${valueType.name}, ${aggregator.name}]"
+}
+
+case class VecMerger(inputType: WeldType, aggregator: Aggregator) extends AggregatingBuilderType {
+  override def outputType: WeldType = VecType(inputType)
+  override def name: String = s"vecmerger[${inputType.name}, ${aggregator.name}]"
+}
