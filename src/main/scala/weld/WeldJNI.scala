@@ -57,4 +57,7 @@ object WeldJNI {
 
   @native
   private[weld] def weld_conf_set(handle: Long, key: String, value: String): Unit
+
+  @native
+  private [weld] def weld_load_library(filename: String, error: Long): Unit
 }
