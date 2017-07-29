@@ -141,3 +141,11 @@ pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1conf_1set(env: JNIEnv, _:
     let value = env.get_string(jvalue).unwrap();
     weld_conf_set(conf, key.get_raw(), value.get_raw())
 }
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1load_1library(env: JNIEnv, _: JObject, jfilename: JString, errorPtr: jlong) {
+    let filename = env.get_string(jfilename).unwrap();
+    let error = errorPtr as *mut WeldError;
+    weld_load_library(filename.get_raw(), error)
+}
