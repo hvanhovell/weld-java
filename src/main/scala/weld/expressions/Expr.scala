@@ -46,16 +46,35 @@ case class Identifier(name: String, dataType: WeldType = UnknownType) extends Le
   override def buildDesc(builder: DescBuilder): Unit = builder.append(name)
 }
 
-case class Parameter(name: String, dataType: WeldType = UnknownType) extends LeafExpr {
+case class Parameter(name: String, dataType: WeldType = UnknownType) extends ExprLike {
   require(name != null && name != "")
+  def toIdentifier: Identifier = Identifier(name, dataType)
+  override def children: Seq[Expr] = Seq.empty
   override def buildDesc(builder: DescBuilder): Unit = {
     builder.append(s"$name: ${dataType.name}")
   }
 }
 
-case class Literal(value: Any, dataType: WeldType = UnknownType) extends LeafExpr {
+case class Literal private(value: Any, dataType: PrimitiveType) extends LeafExpr {
   require(value != null)
-  override def buildDesc(builder: DescBuilder): Unit = builder.append(value.toString)
+  override def buildDesc(builder: DescBuilder): Unit = {
+    builder.append(value.toString).append(dataType.suffix)
+  }
+}
+
+object Literal {
+  def apply(value: Any): Literal = {
+    val dataType = value match {
+      case _: Boolean => bool
+      case _: Byte => i8
+      case _: Int => i32
+      case _: Long => i64
+      case _: Float => f32
+      case _: Double => f64
+      case _ => throw new IllegalArgumentException(s"Cannot create a literal for: $value")
+    }
+    Literal(value, dataType)
+  }
 }
 
 case class Cast(child: Expr, override val dataType: PrimitiveType) extends UnaryExpr with FunctionDesc {
@@ -83,16 +102,30 @@ case class MakeStruct(children: Seq[Expr]) extends Expr {
   }
 }
 
-// TODO we might need to add an explicit type here, since you are allowed to create an empty vector.
-case class MakeVector(children: Seq[Expr]) extends Expr {
-  lazy val elementType: WeldType = children.headOption.map(_.dataType).getOrElse(UnknownType)
+case class MakeVector private(children: Seq[Expr], elementType: WeldType) extends Expr {
   override def dataType: WeldType = VecType(elementType)
   override def resolved: Boolean = {
-    super.resolved && children.forall(_.dataType == dataType) && (children.isEmpty || elementType != UnknownType)
+    elementType != UnknownType && super.resolved && children.forall(_.dataType == elementType)
   }
   override def buildDesc(builder: DescBuilder): Unit = {
     builder.append("[", ", ", "]", children)
   }
+}
+
+object MakeVector {
+  def apply(children: Seq[Expr]): MakeVector = {
+    require(children.nonEmpty)
+    val elementType = children.map(_.dataType)
+      .filterNot(_ == UnknownType)
+      .headOption
+      .getOrElse(UnknownType)
+    MakeVector(children, elementType)
+  }
+
+  /**
+   * Create a [[MakeVector]] statement that produces an empty vector.
+   */
+  def empty(elementType: WeldType): MakeVector = MakeVector(Seq.empty, elementType)
 }
 
 case class GetField(child: Expr, index: Int) extends UnaryExpr {
@@ -191,7 +224,7 @@ case class Iterate(left: Expr, right: Expr) extends BinaryExpr with FunctionDesc
 
 case class Lambda(parameters: Seq[Parameter], body: Expr) extends Expr {
   override def dataType: WeldType = body.dataType
-  override def children: Seq[Expr] = parameters :+ body
+  override def children: Seq[Expr] = Seq(body)
   override def buildDesc(builder: DescBuilder): Unit = {
     builder.append("|", ", ", "|", parameters).newLine().append(body)
   }
@@ -210,7 +243,11 @@ case class Iter(expr: Expr, startEndStride: Option[(Expr, Expr, Expr)] = None) e
   }
 
   override def buildDesc(builder: DescBuilder): Unit = {
-    builder.append("iter(", ",", ")", children)
+    if (startEndStride.isDefined) {
+      builder.append("iter(", ",", ")", children)
+    } else {
+      builder.append(expr)
+    }
   }
 }
 
@@ -220,12 +257,7 @@ case class For(iters: Seq[Iter], builder: Expr, func: Expr) extends Expr {
   override def resolved: Boolean = {
     def funcIsValid: Boolean = func match {
       case Lambda(Seq(Parameter(_, builderType), Parameter(_, `i64`), Parameter(_, valueType)), _) =>
-        val expectedValueType = if (iters.size > 1) {
-          StructType(iters.map(_.dataType.elementType))
-        } else {
-          iters.head.dataType.elementType
-        }
-        builderType == builder.dataType && valueType == expectedValueType
+        builderType == builder.dataType && valueType == For.valueType(iters)
     }
     iters.nonEmpty &&
       iters.forall(_.resolved) &&
@@ -249,6 +281,14 @@ case class For(iters: Seq[Iter], builder: Expr, func: Expr) extends Expr {
   override def dataType: WeldType = builder.dataType
 }
 
+object For {
+  def valueType(iters: Seq[Iter]): WeldType = iters match {
+    case Seq() => throw new IllegalArgumentException("No-iters defined.")
+    case Seq(iter) => iter.dataType.elementType
+    case _ => StructType(iters.map(_.dataType.elementType))
+  }
+}
+
 case class Merge(left: Expr, right: Expr) extends BinaryExpr with FunctionDesc {
   override def resolved: Boolean = (left.dataType, right.dataType) match {
     case _ if !super.resolved => false
@@ -259,11 +299,12 @@ case class Merge(left: Expr, right: Expr) extends BinaryExpr with FunctionDesc {
   override def fn: String = "merge"
 }
 
-case class NewBuilder(dataType: BuilderType, intitial: Option[Expr]) extends Expr {
-  // TODO validate initial type!
+case class NewBuilder(dataType: BuilderType, intitial: Option[Expr] = None) extends Expr {
+  override def resolved: Boolean = dataType.isInstanceOf[BuilderType] && intitial.forall(_.resolved)
   override def children: Seq[Expr] = intitial.toSeq
   override def buildDesc(builder: DescBuilder): Unit = {
-    builder.appendPrefix(dataType.name).append("(", "", ")", intitial.toSeq)
+    val nestedBuilder = builder.appendPrefix(dataType.name)
+    intitial.foreach(nestedBuilder.append)
   }
 }
 

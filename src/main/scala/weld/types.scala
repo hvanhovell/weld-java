@@ -5,7 +5,7 @@ import scala.annotation.varargs
 /**
  * A weld data type.
  */
-trait WeldType {
+trait WeldType extends Serializable {
   /**
    * Get the name of data type.
    */
@@ -33,7 +33,7 @@ object UnknownType extends WeldType {
 /**
  * A weld primitive type.
  */
-sealed abstract class PrimitiveType(val name: String, val size: Int) extends WeldType {
+sealed abstract class PrimitiveType(val name: String, val size: Int, val suffix: String = "") extends WeldType {
   override def alignment: Int = size
 }
 
@@ -45,7 +45,7 @@ object bool extends PrimitiveType("bool", 1)
 /**
  * 8-bit signed integer.
  */
-object i8 extends PrimitiveType("i8", 1)
+object i8 extends PrimitiveType("i8", 1, "C")
 
 /**
  * 32-bit signed integer.
@@ -55,12 +55,12 @@ object i32 extends PrimitiveType("i32", 4)
 /**
  * 64-bit signed integer.
  */
-object i64 extends PrimitiveType("i64", 8)
+object i64 extends PrimitiveType("i64", 8, "L")
 
 /**
  * 32-bit floating point.
  */
-object f32 extends PrimitiveType("f32", 4)
+object f32 extends PrimitiveType("f32", 4, "F")
 
 /**
  * 64-bit floating point.
@@ -156,7 +156,7 @@ trait AggregatingBuilderType extends BuilderType {
 
 case class Appender(inputType: WeldType) extends BuilderType {
   override def outputType: WeldType = VecType(inputType)
-  override def name: String = s"appender[${outputType.name}]"
+  override def name: String = s"appender[${inputType.name}]"
 }
 
 case class GroupMerger(keyType: WeldType, valueType: WeldType) extends BuilderType {
