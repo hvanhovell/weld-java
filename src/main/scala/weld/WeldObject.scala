@@ -72,7 +72,11 @@ abstract class WeldObject(val address: Long) {
   /**
    * Get the pointer at the given offset.
    */
-  def getPointer(index: Int): Long = Platform.getLong(indexToAddress(index, Pointer))
+  def getPointer(index: Int): Long = {
+    val elementType = getElementType(index)
+    assert(getElementType(index).isInstanceOf[PointerType], s"Expected a pointer at index($index), but found a '$elementType' instead.")
+    Platform.getLong(indexToAddress(index))
+  }
 
   /**
    * Get the vector at the given index.
