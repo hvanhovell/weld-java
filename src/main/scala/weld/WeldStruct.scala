@@ -56,6 +56,35 @@ class WeldStruct(
 }
 
 object WeldStruct {
+  def zero(structType: StructType): WeldStruct = {
+    val address = Platform.allocateMemory(structType.size)
+    structType.fields.foreach {
+      case FieldInfo(`bool`, offset) =>
+        Platform.putByte(address + offset, 0.toByte)
+      case FieldInfo(`i8`, offset) =>
+        Platform.putByte(address + offset, 0.toByte)
+      case FieldInfo(`i32`, offset) =>
+        Platform.putInt(address + offset, 0)
+      case FieldInfo(`i64`, offset) =>
+        Platform.putLong(address + offset, 0L)
+      case FieldInfo(`f32`, offset) =>
+        Platform.putFloat(address + offset, 0f)
+      case FieldInfo(`f64`, offset) =>
+        Platform.putDouble(address + offset, 0d)
+      case FieldInfo(_: PointerType, offset) =>
+        Platform.putLong(address + offset, 0L)
+      case FieldInfo(_: VecType, offset) =>
+        Platform.putLong(address + offset, 0L)
+        Platform.putLong(address + offset + 8, 0L)
+      case FieldInfo(dt, _) =>
+        Platform.freeMemory(address)
+        throw new IllegalArgumentException(s"Cannot create an initial value for data type: $dt")
+    }
+    val result = new WeldStruct(address, structType, freeOnClose = true)
+    Platform.registerForCleanUp(result)
+    result
+  }
+
   @varargs
   def struct(values: Any*): WeldStruct = {
     // Determine the struct type.
@@ -73,6 +102,8 @@ object WeldStruct {
       case builder: WeldVec.Builder =>
         vectorSize += ceil8(builder.size)
         VecType(builder.elementType)
+      case wrapper: WeldPointerWrapper =>
+        wrapper.dataType
       case v =>
         throw new IllegalArgumentException(s"Unsupported struct value: $v")
     }
@@ -105,6 +136,8 @@ object WeldStruct {
             Platform.putLong(fieldAddress + 8, builder.numElements)
             builder.putValues(address + dataOffset)
             dataOffset += ceil8(builder.size)
+          case wrapper: WeldPointerWrapper =>
+            Platform.putLong(fieldAddress, wrapper.address)
         }
     }
     val result = new WeldStruct(address, structType, freeOnClose = true)

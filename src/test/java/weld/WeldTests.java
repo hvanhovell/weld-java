@@ -369,21 +369,21 @@ public class WeldTests {
         final WeldValue empty = WeldValue.empty();
         final WeldValue buffer = initialize.run(empty)) {
       // Get the buffer pointer.
-      long address = buffer.result(pointer).getPointer(0);
+      final WeldPointerWrapper ptr = buffer.result(pointer).getPointer(0);
 
       // Update the buffer in 10 increments.
       long expected = 0;
       for (int i = 0; i < 10; i++) {
-        try (final WeldStruct arguments = struct(address, vec(1L + i, 2L + i, 3L + i));
+        try (final WeldStruct arguments = struct(ptr, vec(1L + i, 2L + i, 3L + i));
              final WeldValue input = arguments.toValue()) {
           final WeldValue output = update.run(input);
-          Assert.assertEquals(address, output.result(pointer).getPointer(0));
+          Assert.assertEquals(ptr, output.result(pointer).getPointer(0));
           output.close();
           expected += 6 + 3 * i;
         }
       }
 
-      try (final WeldValue input = struct(address).toValue();
+      try (final WeldValue input = struct(ptr).toValue();
            final WeldValue output = finalize.run(input)) {
         Assert.assertEquals(expected, output.result(i64).getLong(0));
       }
@@ -399,8 +399,8 @@ public class WeldTests {
         final WeldStruct arguments1 = struct(2);
         final WeldValue input1 = arguments1.toValue();
         final WeldValue appender = initialize.run(input1)) {
-      long address = appender.result(pointer).getPointer(0);
-      try (final WeldStruct arguments2 = struct(2, address);
+      final WeldPointerWrapper ptr = appender.result(pointer).getPointer(0);
+      try (final WeldStruct arguments2 = struct(2, ptr);
            final WeldValue input2 = arguments2.toValue();
            final WeldValue output = finalize.run(input2)) {
         final WeldStruct struct = output.result(vecOf(i32), vecOf(i64));
