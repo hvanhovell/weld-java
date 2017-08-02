@@ -8,7 +8,7 @@ trait ExprLike extends Serializable {
   def children: Seq[Expr]
   lazy val desc: String = IndentedDescBuilder().append(this).desc
   lazy val flatDesc: String = SimpleDescBuilder().append(this).desc
-  def buildDesc(builder: DescBuilder):Unit
+  def buildDesc(builder: DescBuilder): Unit
   override def toString: String = desc
 }
 
@@ -46,12 +46,11 @@ case class Identifier(name: String, dataType: WeldType = UnknownType) extends Le
   override def buildDesc(builder: DescBuilder): Unit = builder.append(name)
 }
 
-case class Parameter(name: String, dataType: WeldType = UnknownType) extends ExprLike {
-  require(name != null && name != "")
-  def toIdentifier: Identifier = Identifier(name, dataType)
+case class Parameter(id: Identifier) extends ExprLike {
+  override def dataType: WeldType = id.dataType
   override def children: Seq[Expr] = Seq.empty
   override def buildDesc(builder: DescBuilder): Unit = {
-    builder.append(s"$name: ${dataType.name}")
+    builder.append(id.name).append(": ").append(dataType.name)
   }
 }
 
@@ -222,11 +221,11 @@ case class Iterate(left: Expr, right: Expr) extends BinaryExpr with FunctionDesc
   }
 }
 
-case class Lambda(parameters: Seq[Parameter], body: Expr) extends Expr {
+case class Lambda(parameters: Seq[Identifier], body: Expr) extends Expr {
   override def dataType: WeldType = body.dataType
   override def children: Seq[Expr] = Seq(body)
   override def buildDesc(builder: DescBuilder): Unit = {
-    builder.append("|", ", ", "|", parameters).newLine().append(body)
+    builder.append("|", ", ", "|", parameters.map(Parameter)).newLine().append(body)
   }
 }
 
@@ -256,7 +255,7 @@ case class For(iters: Seq[Iter], builder: Expr, func: Expr) extends Expr {
 
   override def resolved: Boolean = {
     def funcIsValid: Boolean = func match {
-      case Lambda(Seq(Parameter(_, builderType), Parameter(_, `i64`), Parameter(_, valueType)), _) =>
+      case Lambda(Seq(Identifier(_, builderType), Identifier(_, `i64`), Identifier(_, valueType)), _) =>
         builderType == builder.dataType && valueType == For.valueType(iters)
     }
     iters.nonEmpty &&
