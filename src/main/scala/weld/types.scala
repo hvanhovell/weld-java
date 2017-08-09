@@ -25,7 +25,7 @@ trait WeldType extends Serializable {
 }
 
 object UnknownType extends WeldType {
-  override def name: String = "UNKNOWN"
+  override def name: String = "?"
   override def alignment: Int = 0
   override def size: Int = 0
 }

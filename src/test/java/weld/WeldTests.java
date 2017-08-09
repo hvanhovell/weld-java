@@ -411,4 +411,32 @@ public class WeldTests {
       }
     }
   }
+
+  @Ignore
+  public void compileAndRunPassBuilder3() {
+    // This does not work.
+    String code =
+       "|first: bool, last: bool, input: dictmerger[i32, i32, +], v0: vec[i32], v1: vec[i32]|" +
+       "let buffer = if(first, dictmerger[i32, i32, +], input);" +
+       "let updated = for(zip(v0, v1), buffer, |bs, i, ns| merge(bs, {ns.$0, ns.$1}));" +
+       "{updated, if (last, tovec(result(updated: dictmerger[i32, i32, +])), [])}";
+    try(final WeldModule module = WeldModule.compile(code);
+        final WeldStruct args1 = struct(true, false, 0L, vec(1, 1, 2, 2), vec(4, 7, 9, 1));
+        final WeldValue input1 = args1.toValue();
+        final WeldValue result1 = module.run(input1)) {
+      final WeldPointerWrapper ptr = result1.result(pointer).getPointer(0);
+      for (int i = 0; i < 10; i++) {
+        final boolean last = i == 9;
+        try (final WeldStruct args = struct(false, last, ptr, vec(1, 1, 2, 3), vec(i, i + 2, i - 1, i * 8));
+             final WeldValue input = args.toValue();
+             final WeldValue result = module.run(input)) {
+          if (last) {
+            final WeldVec rows = result.result(pointer, vecOf(structOf(i32, i32))).getVec(1);
+            Assert.assertEquals(3, rows.numElements());
+          }
+        }
+      }
+
+    }
+  }
 }
