@@ -41,14 +41,18 @@ task generateJniHeaders(type:Exec) {
 /**
  * Compile the weld-java native library.
  *
- * In the future we might want to get cross compilation working. See:
- * https://chr4.org/blog/2017/03/15/cross-compile-and-link-a-static-binary-on-macos-for-linux-with-cargo-and-rust/
- * https://github.com/japaric/cross
+ * In the future we might want to get (mac/linux) cross compilation working. The easiest solution
+ * seems to be use something like travis or appveyor for this. Another somewhat harder solution is
+ * to use Docker. There are a few flavors here:
+ * - Use cross (https://github.com/japaric/cross), although that does not explicitly support mac
+ *   (and other ties 1 platforms).
+ * - Create our own linux image that supports cross compilation for mac using osxcross.
  *
- * FIXME weld_rt relies on the WELD_HOME var to be set. You currently need weld checked out, and
- * WELD_HOME set for weld to work. The problem is made worse by the fact that the compilation
- * succeeds(!!!) and weld only fails at runtime with the following message:
- * LLVM ERROR: Program used external function '_get_runid' which could not be resolved!
+ * I have tried to use the rust's x86_64-unkown-musl target but that only supports static
+ * libraries which does not work with JNI. We should revisit this when it supports dynamic
+ * libraries. See https://chr4.org/blog/2017/03/15/cross-compile-and-link-a-static-binary-on-macos-for-linux-with-cargo-and-rust/
+ * for more information on this, and be sure to set the CC & AR environment vars in order to
+ * compile backtrace.
  */
 task compileWeld(type:Exec) {
     commandLine "cargo", "build", "--release"
