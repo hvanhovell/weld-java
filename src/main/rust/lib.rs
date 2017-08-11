@@ -1,6 +1,7 @@
 extern crate jni;
-extern crate weld;
 extern crate libc;
+extern crate weld;
+extern crate weld_common;
 
 use libc::c_void;
 
@@ -9,6 +10,7 @@ use jni::objects::{JByteBuffer, JObject, JString};
 use jni::sys::{jstring, jlong, jint};
 use jni::strings::*;
 
+use weld_common::WeldLogLevel;
 use weld::*;
 
 #[no_mangle]
@@ -148,4 +150,23 @@ pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1load_1library(env: JNIEnv
     let filename = env.get_string(jfilename).unwrap();
     let error = errorPtr as *mut WeldError;
     weld_load_library(filename.get_raw(), error)
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1set_1log_1level(env: JNIEnv, _: JObject, level_str: JString) {
+    let level = String::from(env.get_string(level_str).unwrap()).to_lowercase();
+    if level == "error" {
+        weld_set_log_level(WeldLogLevel::Error);
+    } else if level == "warn" {
+        weld_set_log_level(WeldLogLevel::Warn);
+    } else if level == "info" {
+        weld_set_log_level(WeldLogLevel::Info);
+    } else if level == "debug" {
+        weld_set_log_level(WeldLogLevel::Debug);
+    } else if level == "trace" {
+        weld_set_log_level(WeldLogLevel::Trace);
+    } else if level == "off" {
+        weld_set_log_level(WeldLogLevel::Off);
+    }
 }

@@ -143,6 +143,14 @@ JNIEXPORT void JNICALL Java_weld_WeldJNI_00024_weld_1conf_1set
 JNIEXPORT void JNICALL Java_weld_WeldJNI_00024_weld_1load_1library
   (JNIEnv *, jobject, jstring, jlong);
 
+/*
+ * Class:     weld_WeldJNI__
+ * Method:    weld_set_log_level
+ * Signature: (Ljava/lang/String;)V
+ */
+JNIEXPORT void JNICALL Java_weld_WeldJNI_00024_weld_1set_1log_1level
+  (JNIEnv *, jobject, jstring);
+
 #ifdef __cplusplus
 }
 #endif

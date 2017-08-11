@@ -10,4 +10,6 @@ object Weld {
       throw e
     }
   }
+
+  def setLogLevel(level: String): Unit = WeldJNI.weld_set_log_level(level)
 }
