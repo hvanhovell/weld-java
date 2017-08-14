@@ -142,11 +142,11 @@ sealed trait Aggregator {
   def name: String
 }
 
-object PlusAggregator extends Aggregator {
+case object PlusAggregator extends Aggregator {
   override def name: String = "+"
 }
 
-object TimesAggregator extends Aggregator {
+case object TimesAggregator extends Aggregator {
   override def name: String = "*"
 }
 

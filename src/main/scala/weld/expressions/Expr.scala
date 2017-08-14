@@ -338,7 +338,7 @@ case class NewBuilder(dataType: BuilderType, intitial: Option[Expr] = None) exte
   override def children: Seq[Expr] = intitial.toSeq
   override def buildDesc(builder: DescBuilder): Unit = {
     val nestedBuilder = builder.appendPrefix(dataType.name)
-    intitial.foreach(nestedBuilder.append)
+    intitial.foreach(i => nestedBuilder.append("(").append(i).append(")"))
   }
   override def mapChildren(f: Expr => Expr): Expr = copy(intitial = intitial.map(f))
 }

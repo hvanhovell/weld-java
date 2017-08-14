@@ -188,7 +188,7 @@ public class WeldTests {
       Assert.fail("Compilation should have failed.");
     } catch(final WeldException e) {
       Assert.assertEquals(e.code(), 3);
-      Assert.assertEquals(e.getMessage(), "Undefined symbol foo in uniquify");
+      Assert.assertTrue(e.getMessage().contains("Undefined symbol foo in uniquify"));
     }
   }
 

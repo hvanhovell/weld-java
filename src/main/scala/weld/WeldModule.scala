@@ -56,7 +56,7 @@ object WeldModule {
     val error = new WeldError
     val module = new WeldModule(WeldJNI.weld_module_compile(code, conf.handle, error.handle))
     if (error.code != 0) {
-      val e = new WeldException(error)
+      val e = new WeldException(error, Some(code))
       error.close()
       module.close()
       throw e
