@@ -15,13 +15,14 @@ trait ExprLike extends Serializable {
 
 // TODO add annotations.
 trait Expr extends ExprLike {
-  def mapChildren(f: Expr => Expr): Expr
+  protected def withNewChildren(children: Seq[Expr]): Expr
+  final def mapChildren(f: Expr => Expr): Expr = withNewChildren(children.map(f))
 
-  def transformDown(f: PartialFunction[Expr, Expr]): Expr = {
+  final def transformDown(f: PartialFunction[Expr, Expr]): Expr = {
     f.applyOrElse(this, identity[Expr]).mapChildren(_.transformDown(f))
   }
 
-  def transformUp(f: PartialFunction[Expr, Expr]): Expr = {
+  final def transformUp(f: PartialFunction[Expr, Expr]): Expr = {
     val transformed = mapChildren(_.transformUp(f))
     val target = if ((transformed eq this) || (transformed == this)) this else transformed
     f.applyOrElse(target, identity[Expr])
@@ -38,7 +39,7 @@ trait FunctionDesc extends Expr {
 trait LeafExpr extends Expr {
   override def resolved: Boolean = dataType != UnknownType
   override def children: Seq[Expr] = Seq.empty
-  override def mapChildren(f: Expr => Expr): Expr = this
+  override protected def withNewChildren(children: Seq[Expr]): Expr = this
 }
 
 trait UnaryExpr extends Expr {
@@ -46,6 +47,8 @@ trait UnaryExpr extends Expr {
   override def children: Seq[Expr] = Seq(child)
   override def resolved: Boolean = child.resolved
   override def dataType: WeldType = child.dataType
+  override protected final def withNewChildren(children: Seq[Expr]): Expr = withNewChild(children.head)
+  protected def withNewChild(child: Expr): Expr
 }
 
 trait BinaryExpr extends Expr {
@@ -53,6 +56,11 @@ trait BinaryExpr extends Expr {
   def right: Expr
   override def children: Seq[Expr] = Seq(left, right)
   override def resolved: Boolean = left.resolved && right.resolved
+  override protected final def withNewChildren(children: Seq[Expr]): Expr = {
+    val Seq(newLeft, newRight) = children
+    withNewChildren(newLeft, newRight)
+  }
+  protected def withNewChildren(left: Expr, right: Expr): Expr
 }
 
 case class Identifier(name: String, dataType: WeldType = UnknownType) extends LeafExpr {
@@ -92,13 +100,13 @@ object Literal {
 
 case class Cast(child: Expr, override val dataType: PrimitiveType) extends UnaryExpr with FunctionDesc {
   override def fn: String = dataType.name
-  override def mapChildren(f: Expr => Expr): Expr = copy(child = f(child))
+  override protected def withNewChild(newChild: Expr): Cast = copy(newChild)
 }
 
 case class Broadcast(child: Expr) extends UnaryExpr with FunctionDesc {
   override def dataType: WeldType = VecType(child.dataType)
   override def fn: String = "broadcast"
-  override def mapChildren(f: Expr => Expr): Expr = copy(child = f(child))
+  override protected def withNewChild(newChild: Expr): Broadcast = copy(newChild)
 }
 
 case class ToVec(child: Expr) extends UnaryExpr with FunctionDesc {
@@ -108,7 +116,7 @@ case class ToVec(child: Expr) extends UnaryExpr with FunctionDesc {
   }
   override def resolved: Boolean = child.resolved && child.dataType.isInstanceOf[DictType]
   override def fn: String = "tovec"
-  override def mapChildren(f: Expr => Expr): Expr = copy( f(child))
+  override protected def withNewChild(newChild: Expr): ToVec = copy(newChild)
 }
 
 case class MakeStruct(children: Seq[Expr]) extends Expr {
@@ -116,7 +124,7 @@ case class MakeStruct(children: Seq[Expr]) extends Expr {
   override def buildDesc(builder: DescBuilder): Unit = {
     builder.append("{", ", ", "}", children)
   }
-  override def mapChildren(f: Expr => Expr): Expr = copy(children.map(f))
+  override protected def withNewChildren(children: Seq[Expr]): MakeStruct = copy(children)
 }
 
 case class MakeVector private(children: Seq[Expr], elementType: WeldType) extends Expr {
@@ -127,7 +135,7 @@ case class MakeVector private(children: Seq[Expr], elementType: WeldType) extend
   override def buildDesc(builder: DescBuilder): Unit = {
     builder.append("[", ", ", "]", children)
   }
-  override def mapChildren(f: Expr => Expr): Expr = copy(children = children.map(f))
+  override protected def withNewChildren(children: Seq[Expr]): MakeVector = copy(children)
 }
 
 object MakeVector {
@@ -153,14 +161,14 @@ case class GetField(child: Expr, index: Int) extends UnaryExpr {
     structType.fields(index).fieldType
   }
   override def buildDesc(builder: DescBuilder): Unit = builder.append(s"${child.desc}.$$$index")
-  override def mapChildren(f: Expr => Expr): Expr = copy(child = f(child))
+  override protected def withNewChild(newChild: Expr): GetField = copy(newChild)
 }
 
 case class Length(child: Expr) extends UnaryExpr with FunctionDesc {
   override def resolved: Boolean = child.resolved && child.dataType.isInstanceOf[VecType]
   override def dataType: WeldType = i64
   override def fn: String = "len"
-  override def mapChildren(f: Expr => Expr): Expr = copy(f(child))
+  override protected def withNewChild(newChild: Expr): Length = copy(newChild)
 }
 
 // TODO The weld expression language does not support the dict version of lookup.
@@ -177,7 +185,7 @@ case class Lookup(left: Expr, right: Expr) extends BinaryExpr with FunctionDesc 
     case DictType(_, valueType) => valueType
     case _ => UnknownType
   }
-  override def mapChildren(f: Expr => Expr): Expr = copy(f(left), f(right))
+  override protected def withNewChildren(left: Expr, right: Expr): Lookup = copy(left, right)
 }
 
 case class KeyExists(left: Expr, right: Expr) extends BinaryExpr with FunctionDesc {
@@ -188,7 +196,7 @@ case class KeyExists(left: Expr, right: Expr) extends BinaryExpr with FunctionDe
     case _ => false
   }
   override def dataType: WeldType = bool
-  override def mapChildren(f: Expr => Expr): Expr = copy(f(left), f(right))
+  override protected def withNewChildren(left: Expr, right: Expr): KeyExists = copy(left, right)
 }
 
 case class Slice(vector: Expr, offset: Expr, length: Expr) extends Expr with FunctionDesc {
@@ -201,7 +209,11 @@ case class Slice(vector: Expr, offset: Expr, length: Expr) extends Expr with Fun
       offset.dataType == i64 &&
       length.dataType == i64
   }
-  override def mapChildren(f: Expr => Expr): Expr = copy(vector = f(vector), offset = f(offset), length = f(length))
+
+  override protected def withNewChildren(children: Seq[Expr]): Slice = {
+    val Seq(newVector, newOffset, newLength) = children
+    copy(newVector, newOffset, newLength)
+  }
 }
 
 case class Let(name: String, value: Expr, body: Expr) extends Expr {
@@ -211,7 +223,10 @@ case class Let(name: String, value: Expr, body: Expr) extends Expr {
     builder.appendPrefix(s"let $name = ").append(value).append(";")
     builder.newLine().append(body)
   }
-  override def mapChildren(f: Expr => Expr): Expr = copy(value = f(value), body = f(body))
+  override protected def withNewChildren(children: Seq[Expr]): Let = {
+    val Seq(newValue, newBody) = children
+    copy(name, newValue, newBody)
+  }
 }
 
 abstract class ConditionalExpr(condition: Expr, onTrue: Expr, onFalse: Expr) extends Expr with FunctionDesc {
@@ -224,18 +239,24 @@ abstract class ConditionalExpr(condition: Expr, onTrue: Expr, onFalse: Expr) ext
 
 case class Select(condition: Expr, onTrue: Expr, onFalse: Expr) extends ConditionalExpr(condition, onTrue, onFalse) {
   override def fn: String = "select"
-  override def mapChildren(f: Expr => Expr): Expr = copy(f(condition), f(onTrue), f(onFalse))
+  override protected def withNewChildren(children: Seq[Expr]): Select = {
+    val Seq(newCondition, newOnTrue, newOnFalse) = children
+    copy(newCondition, newOnTrue, newOnFalse)
+  }
 }
 
 case class If(condition: Expr, onTrue: Expr, onFalse: Expr) extends ConditionalExpr(condition, onTrue, onFalse) {
   override def fn: String = "if"
-  override def mapChildren(f: Expr => Expr): Expr = copy(f(condition), f(onTrue), f(onFalse))
+  override protected def withNewChildren(children: Seq[Expr]): If = {
+    val Seq(newCondition, newOnTrue, newOnFalse) = children
+    copy(newCondition, newOnTrue, newOnFalse)
+  }
 }
 
 case class CUDF(name: String, children: Seq[Expr], dataType: WeldType) extends Expr with FunctionDesc {
   override def resolved: Boolean = super.resolved && dataType != UnknownType
   override def fn: String = s"cudf[$name, $dataType]"
-  override def mapChildren(f: Expr => Expr): Expr = copy(children = children.map(f))
+  override protected def withNewChildren(children: Seq[Expr]): CUDF = copy(children = children)
 }
 
 case class Iterate(left: Expr, right: Expr) extends BinaryExpr with FunctionDesc {
@@ -247,7 +268,7 @@ case class Iterate(left: Expr, right: Expr) extends BinaryExpr with FunctionDesc
       inputType == outputType
     case _ => false
   }
-  override def mapChildren(f: Expr => Expr): Expr = copy(f(left), f(right))
+  override protected def withNewChildren(left: Expr, right: Expr): Iterate = copy(left, right)
 }
 
 case class Lambda(parameters: Seq[Identifier], body: Expr) extends Expr {
@@ -256,7 +277,10 @@ case class Lambda(parameters: Seq[Identifier], body: Expr) extends Expr {
   override def buildDesc(builder: DescBuilder): Unit = {
     builder.append("|", ", ", "|", parameters.map(Parameter)).newLine().append(body)
   }
-  override def mapChildren(f: Expr => Expr): Expr = copy(body = f(body))
+  override protected def withNewChildren(children: Seq[Expr]): Lambda = {
+    val newParameters :+ newBody = children
+    copy(newParameters.map(_.asInstanceOf[Identifier]), newBody)
+  }
 }
 
 // Note that this is NOT an expression because you can only use it as the input to a For expression.
@@ -281,7 +305,7 @@ case class Iter(expr: Expr, startEndStride: Option[(Expr, Expr, Expr)] = None) e
 }
 
 case class For(iters: Seq[Iter], builder: Expr, func: Expr) extends Expr {
-  override def children: Seq[Expr] = iters.flatMap(_.children) :+ builder :+ func
+  override def children: Seq[Expr] = iters.map(_.expr) :+ builder :+ func
 
   override def resolved: Boolean = {
     def funcIsValid: Boolean = func match {
@@ -296,7 +320,6 @@ case class For(iters: Seq[Iter], builder: Expr, func: Expr) extends Expr {
       funcIsValid
   }
 
-
   override def buildDesc(descBuilder: DescBuilder): Unit = {
     val paramBuilder = descBuilder.appendPrefix("for(")
     if (iters.size > 1) {
@@ -309,10 +332,13 @@ case class For(iters: Seq[Iter], builder: Expr, func: Expr) extends Expr {
 
   override def dataType: WeldType = builder.dataType
 
-  override def mapChildren(f: (Expr) => Expr): Expr = copy(
-    iters.map(i => i.copy(f(i.expr), i.startEndStride.map(p => (f(p._1), f(p._2), f(p._3))))),
-    f(builder),
-    f(func))
+  override protected def withNewChildren(children: Seq[Expr]): For = {
+    val newVectors :+ newBuilder :+ newFunc = children
+    val newIters = newVectors.zip(iters).map {
+      case (vector, iter) => iter.copy(expr = vector)
+    }
+    copy(newIters, newBuilder, newFunc)
+  }
 }
 
 object For {
@@ -331,7 +357,7 @@ case class Merge(left: Expr, right: Expr) extends BinaryExpr with FunctionDesc {
   }
   override def dataType: WeldType = left.dataType
   override def fn: String = "merge"
-  override def mapChildren(f: Expr => Expr): Expr = copy(f(left), f(right))
+  override protected def withNewChildren(left: Expr, right: Expr): Merge = copy(left, right)
 }
 
 case class NewBuilder(dataType: BuilderType, intitial: Option[Expr] = None) extends Expr {
@@ -341,12 +367,18 @@ case class NewBuilder(dataType: BuilderType, intitial: Option[Expr] = None) exte
     val nestedBuilder = builder.appendPrefix(dataType.name)
     intitial.foreach(i => nestedBuilder.append("(").append(i).append(")"))
   }
-  override def mapChildren(f: Expr => Expr): Expr = copy(intitial = intitial.map(f))
+  override protected def withNewChildren(children: Seq[Expr]): NewBuilder = {
+    val newInitial = children match {
+      case Seq(expr) => Some(expr)
+      case Seq() => None
+    }
+    copy(intitial = newInitial)
+  }
 }
 
 case class Result(child: Expr) extends UnaryExpr with FunctionDesc {
   override def resolved: Boolean = super.resolved && child.dataType.isInstanceOf[BuilderType]
   override def dataType: WeldType = child.dataType.asInstanceOf[BuilderType].outputType
   override def fn: String = "result"
-  override def mapChildren(f: Expr => Expr): Expr = copy(f(child))
+  override protected def withNewChild(newChild: Expr): Result = copy(newChild)
 }
