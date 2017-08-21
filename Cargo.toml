@@ -8,6 +8,7 @@ libc = "0.2.0"
 weld_common = { git = "https://github.com/weld-project/weld" }
 weld = { git = "https://github.com/weld-project/weld" }
 jni = { git = "https://github.com/prevoty/jni-rs" }
+regex = "*"
 
 [lib]
 path = "src/main/rust/lib.rs"

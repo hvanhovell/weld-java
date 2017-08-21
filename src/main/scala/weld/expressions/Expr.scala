@@ -6,6 +6,7 @@ trait ExprLike extends Serializable {
   def resolved: Boolean = children.forall(_.resolved)
   def dataType: WeldType
   def children: Seq[Expr]
+  def foldable: Boolean = children.forall(_.foldable)
   lazy val desc: String = IndentedDescBuilder().append(this).desc
   lazy val flatDesc: String = SimpleDescBuilder().append(this).desc
   def buildDesc(builder: DescBuilder): Unit
