@@ -6,6 +6,7 @@ trait ExprLike extends Serializable {
   def resolved: Boolean = children.forall(_.resolved)
   def dataType: WeldType
   def children: Seq[Expr]
+  def references: Seq[Expr] = children.flatMap(_.references)
   def foldable: Boolean = children.forall(_.foldable)
   lazy val desc: String = IndentedDescBuilder().append(this).desc
   lazy val flatDesc: String = SimpleDescBuilder().append(this).desc
@@ -65,6 +66,7 @@ trait BinaryExpr extends Expr {
 
 case class Identifier(name: String, dataType: WeldType = UnknownType) extends LeafExpr {
   require(name != null && name != "")
+  override def references: Seq[Expr] = Seq(this)
   override def buildDesc(builder: DescBuilder): Unit = builder.append(name)
 }
 
@@ -78,6 +80,7 @@ case class Parameter(id: Identifier) extends ExprLike {
 
 case class Literal private(value: Any, dataType: PrimitiveType) extends LeafExpr {
   require(value != null)
+  override def references: Seq[Expr] = Seq()
   override def buildDesc(builder: DescBuilder): Unit = {
     builder.append(value.toString).append(dataType.suffix)
   }
