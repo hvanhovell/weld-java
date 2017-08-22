@@ -29,6 +29,14 @@ class WeldValue private[weld](handle: Long, val size: Long = -1) extends WeldMan
   }
 
   /**
+   * Get the memory usage of the run that generated this value.
+   */
+  def getMemoryUsage: Long = {
+    checkAccess()
+    WeldJNI.weld_value_memory_usage(handle)
+  }
+
+  /**
    * Get the result of a weld module run.
    */
   def result(structType: StructType): WeldStruct = {

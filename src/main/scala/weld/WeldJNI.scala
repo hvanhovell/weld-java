@@ -23,6 +23,9 @@ object WeldJNI {
   private[weld] def weld_value_run(handle: Long): Long
 
   @native
+  private[weld] def weld_value_memory_usage(handle: Long): Long
+
+  @native
   private[weld] def weld_value_free(handle: Long): Unit
 
   @native

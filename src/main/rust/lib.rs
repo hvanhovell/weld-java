@@ -49,6 +49,13 @@ pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1value_1run(_: JNIEnv, _: 
 
 #[no_mangle]
 #[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1value_1memory_1usage(_: JNIEnv, _: JObject, valuePtr: jlong) -> jlong {
+    let value = valuePtr as *mut WeldValue;
+    weld_value_memory_usage(value)
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1value_1free(_: JNIEnv, _: JObject, valuePtr: jlong) {
     let value = valuePtr as *mut WeldValue;
     weld_value_free(value)
