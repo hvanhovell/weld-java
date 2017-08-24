@@ -2,17 +2,25 @@ package weld
 
 class WeldError extends WeldManaged(WeldJNI.weld_error_new()) {
   override protected def doClose(): Unit = {
-    WeldJNI.weld_error_free(this.handle)
+    WeldJNI.weld_error_free(handle)
   }
+
+  override protected def cleaner = new WeldError.Cleaner(handle)
 
   def code: Int = {
     checkAccess()
-    WeldJNI.weld_error_code(this.handle)
+    WeldJNI.weld_error_code(handle)
   }
 
   def message: String = {
     checkAccess()
-    WeldJNI.weld_error_message(this.handle)
+    WeldJNI.weld_error_message(handle)
+  }
+}
+
+object WeldError {
+  private[weld] class Cleaner(handle: Long) extends Runnable {
+    override def run(): Unit = WeldJNI.weld_error_free(handle)
   }
 }
 

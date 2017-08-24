@@ -2,7 +2,7 @@ package weld
 
 class WeldModule private(handle: Long) extends WeldManaged(handle) {
   override protected def doClose(): Unit = {
-    WeldJNI.weld_module_free(this.handle)
+    WeldJNI.weld_module_free(handle)
   }
 
   /**
@@ -23,7 +23,7 @@ class WeldModule private(handle: Long) extends WeldManaged(handle) {
     val error = new WeldError
     val output = new WeldValue(
       WeldJNI.weld_module_run(
-        this.handle,
+        handle,
         conf.handle,
         input.handle,
         error.handle),
@@ -36,6 +36,11 @@ class WeldModule private(handle: Long) extends WeldManaged(handle) {
     }
     output
   }
+
+  /**
+   * Create a cleaner for the managed object.
+   */
+  override protected def cleaner = new WeldModule.Cleaner(handle)
 }
 
 object WeldModule {
@@ -62,5 +67,9 @@ object WeldModule {
       throw e
     }
     module
+  }
+
+  private[weld] class Cleaner(handle: Long) extends Runnable {
+    override def run(): Unit = WeldJNI.weld_module_free(handle)
   }
 }

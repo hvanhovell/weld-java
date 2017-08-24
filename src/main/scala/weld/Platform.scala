@@ -15,15 +15,8 @@ object Platform {
   /**
    * Register an AutoCloseable for automatic clean-up as soon as it gets garbage collected.
    */
-  def registerForCleanUp(closeable: AutoCloseable): Unit = {
-    Cleaner.create(closeable, new Runnable {
-      override def run(): Unit = {
-        try closeable.close() catch {
-          case e: Exception =>
-            throw new RuntimeException(e)
-        }
-      }
-    })
+  def registerForCleanUp(ref: AnyRef, cleaner: Runnable): Unit = {
+    Cleaner.create(ref, cleaner)
   }
 
   def allocateMemory(size: Long): Long = UNSAFE.allocateMemory(size)

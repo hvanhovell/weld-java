@@ -10,7 +10,7 @@ class WeldStruct(
     val objectType: StructType,
     private var freeOnClose: Boolean = false)
   extends WeldObject(address)
-    with AutoCloseable {
+  with AutoCloseable {
 
   override def size: Long = objectType.size
   override def numElements: Long = objectType.fields.size
@@ -80,9 +80,7 @@ object WeldStruct {
         Platform.freeMemory(address)
         throw new IllegalArgumentException(s"Cannot create an initial value for data type: $dt")
     }
-    val result = new WeldStruct(address, structType, freeOnClose = true)
-    Platform.registerForCleanUp(result)
-    result
+    new WeldStruct(address, structType, freeOnClose = true)
   }
 
   @varargs
@@ -140,9 +138,7 @@ object WeldStruct {
             Platform.putLong(fieldAddress, wrapper.address)
         }
     }
-    val result = new WeldStruct(address, structType, freeOnClose = true)
-    Platform.registerForCleanUp(result)
-    result
+    new WeldStruct(address, structType, freeOnClose = true)
   }
 
   /**

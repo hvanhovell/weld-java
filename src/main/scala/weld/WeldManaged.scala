@@ -11,12 +11,29 @@ abstract class WeldManaged(val handle: Long) extends AutoCloseable {
   private var closed = false
 
   /**
+   * Flag to indicate that the underlying reference will be cleaned up as soon as this object is
+   * garbage collected.
+   */
+  private var autoClean = false
+
+  /**
    * Close the weld managed object. Note that this method is idempotent.
    */
   override def close(): Unit = {
-    if (!closed) {
+    if (!closed && !autoClean) {
       doClose()
       closed = true
+    }
+  }
+
+  /**
+   * Sets the closeable to auto cleaning mode. This means that the underlying handle is cleaned up
+   * as soon as the object is garbage collected.
+   */
+  def markAutoCleanable(): Unit = {
+    if (!autoClean) {
+      autoClean = true
+      Platform.registerForCleanUp(this, cleaner)
     }
   }
 
@@ -24,6 +41,11 @@ abstract class WeldManaged(val handle: Long) extends AutoCloseable {
    * Close the weld managed object.
    */
   protected def doClose(): Unit
+
+  /**
+   * Create a cleaner for the managed object.
+   */
+  protected def cleaner: Runnable
 
   /**
    * Check if the weld managed is closed.

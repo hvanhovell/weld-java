@@ -12,6 +12,8 @@ import scala.annotation.varargs
 class WeldValue private[weld](handle: Long, val size: Long = -1) extends WeldManaged(handle) {
   override protected def doClose(): Unit = WeldJNI.weld_value_free(handle)
 
+  override protected def cleaner = new WeldValue.Cleaner(handle)
+
   /**
    * Get the address to the data this value encapsulates.
    */
@@ -84,5 +86,9 @@ object WeldValue {
    */
   def apply(pointer: Long, size: Long): WeldValue = {
     new WeldValue(WeldJNI.weld_value_new(pointer), size)
+  }
+
+  private[weld] class Cleaner(handle: Long) extends Runnable {
+    override def run(): Unit = WeldJNI.weld_value_free(handle)
   }
 }
