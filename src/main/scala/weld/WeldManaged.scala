@@ -31,7 +31,7 @@ abstract class WeldManaged(val handle: Long) extends AutoCloseable {
    * as soon as the object is garbage collected.
    */
   def markAutoCleanable(): Unit = {
-    if (!autoClean) {
+    if (!closed && !autoClean) {
       autoClean = true
       Platform.registerForCleanUp(this, cleaner)
     }

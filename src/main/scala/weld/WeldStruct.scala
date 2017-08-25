@@ -43,12 +43,21 @@ class WeldStruct(
    */
   def toValue = WeldValue(address, size)
 
+  private var autoClean: Boolean = false
+
+  def markAutoCleanable(): Unit = {
+    if (freeOnClose && !autoClean) {
+      autoClean = true
+      Platform.registerForCleanUp(this, new WeldStruct.Cleaner(address))
+    }
+  }
+
   /**
    * Close the weld struct, it should not be used after this call as it will try free the
    * memory location it points to.
    */
   override def close(): Unit = {
-    if (freeOnClose) {
+    if (freeOnClose && !autoClean) {
       Platform.freeMemory(address)
       freeOnClose = false
     }
@@ -145,4 +154,8 @@ object WeldStruct {
    * Round an int up to its nearest multiple vecOf 8.
    */
   private def ceil8(value: Long) = (value + 0x7L) & ~0x7L
+
+  private[weld] class Cleaner(address: Long) extends Runnable {
+    override def run(): Unit = Platform.freeMemory(address)
+  }
 }
