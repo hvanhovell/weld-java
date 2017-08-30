@@ -1,3 +1,5 @@
+import org.scijava.nativelib.NativeLibraryUtil
+
 apply plugin: 'scala'
 apply plugin: 'maven-publish'
 
@@ -41,12 +43,17 @@ task generateJniHeaders(type:Exec) {
 /**
  * Compile the weld-java native library.
  *
- * In the future we might want to get (mac/linux) cross compilation working. The easiest solution
- * seems to be use something like travis or appveyor for this. Another somewhat harder solution is
- * to use Docker. There are a few flavors here:
- * - Use cross (https://github.com/japaric/cross), although that does not explicitly support mac
- *   (and other ties 1 platforms).
- * - Create our own linux image that supports cross compilation for mac using osxcross.
+ * We currently support compilation for the local platform and provide a docker image for linux
+ * compilation. You can build weld-java for linux using the docker linux image by executing the
+ * `compileWeldLinux` task. Note that building the linux library is not super fast, and that this
+ * should be reserved for release builds.
+ *
+ * There is also an image that should be able to build weld-java for both linux and mac. You can
+ * find its Dockerfile in the `docker/cross` directory. This is however a work in progress and it
+ * is currently not able to build its mac target; it fails with various linker errors.
+ *
+ * A different solution to cross compilation would be use something like travis of appveyor to
+ * do for us.
  *
  * I have tried to use the rust's x86_64-unkown-musl target but that only supports static
  * libraries which does not work with JNI. We should revisit this when it supports dynamic
@@ -56,6 +63,15 @@ task generateJniHeaders(type:Exec) {
  */
 task compileWeld(type:Exec) {
     commandLine "cargo", "build", "--release"
+}
+
+task compileWeldLinux(type:Exec) {
+    def dir = rootProject.projectDir.toString()
+    // Build the docker image. This will take some time on the first run.
+    commandLine "docker", "build", "-t", "weld-java-linux", "docker/linux"
+    // Build the weld-java native library for linux.
+    commandLine "docker", "run", "--rm", "-v", dir + ":/source", "weld-java-linux",
+                "cargo", "build", "--release", "--target=x86_64-unknown-linux-gnu"
 }
 
 test {
@@ -70,14 +86,26 @@ jar {
                    'Implementation-Version': project.version)
     }
     // Make sure we copy the compiled native libary to the correct location in the jar file.
-    def platform = org.scijava.nativelib.NativeLibraryUtil.getArchitecture().name().toLowerCase()
-    def libname = org.scijava.nativelib.NativeLibraryUtil.getPlatformLibraryName('weld_java')
+    def platform = NativeLibraryUtil.getArchitecture().name().toLowerCase()
+    def libname = NativeLibraryUtil.getPlatformLibraryName('weld_java')
     into('META-INF/lib/' + platform) {
       from {
         'target/release/' + libname
       }
     }
+    // Attempt to copy native libraries for the various platforms to the jar.
+    into('META-INF/lib/osx_64') {
+        from {
+            'target/x86_64-apple-darwin/release/libweld_java.dylib'
+        }
+    }
+    into('META-INF/lib/linux_64') {
+        from {
+            'target/x86_64-unknown-linux-gnu/release/libweld_java.so'
+        }
+    }
     dependsOn compileWeld
+    mustRunAfter compileWeldLinux
 }
 
 publishing {
