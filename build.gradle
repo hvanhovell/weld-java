@@ -3,7 +3,7 @@ import org.scijava.nativelib.NativeLibraryUtil
 apply plugin: 'scala'
 apply plugin: 'maven-publish'
 
-version = '0.1.0'
+version = '0.1.0-SNAPSHOT'
 group = "weld"
 
 repositories {
@@ -112,6 +112,12 @@ publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
+        }
+    }
+    repositories {
+        def target = version.contains('SNAPSHOT') ? 'snapshot' : 'release'
+        maven {
+            url "$rootProject.projectDir/../repo/$target"
         }
     }
 }
