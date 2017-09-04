@@ -231,7 +231,8 @@ public class WeldTests {
     doCompileAndRun2ArgsVecRet2();
   }
 
-  @Test
+  // See: https://github.com/weld-project/weld/issues/220
+  @Ignore
   public void compileAndRun2ArgsVecsRet1() {
     String code =
             "|x:i32, ys:vec[i64]|" +

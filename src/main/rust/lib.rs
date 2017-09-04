@@ -1,7 +1,6 @@
 extern crate jni;
 extern crate libc;
 extern crate weld;
-extern crate weld_common;
 extern crate regex;
 
 use libc::c_void;
@@ -11,7 +10,7 @@ use jni::objects::{JByteBuffer, JObject, JString};
 use jni::sys::{jstring, jlong, jint};
 use jni::strings::*;
 
-use weld_common::WeldLogLevel;
+use weld::common::WeldLogLevel;
 use weld::*;
 
 // TODO Temporary measure. We should spin this of in a different library.

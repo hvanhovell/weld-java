@@ -33,39 +33,64 @@ object UnknownType extends WeldType {
 /**
  * A weld primitive type.
  */
-sealed abstract class PrimitiveType(val name: String, val size: Int, val suffix: String = "") extends WeldType {
+sealed abstract class PrimitiveType(val name: String, val size: Int, val suffixOpt: Option[String] = None) extends WeldType {
   override def alignment: Int = size
 }
 
 /**
  * Boolean.
  */
-object bool extends PrimitiveType("bool", 1)
+object bool extends PrimitiveType("bool", 1, Option(""))
 
 /**
  * 8-bit signed integer.
  */
-object i8 extends PrimitiveType("i8", 1, "C")
+object i8 extends PrimitiveType("i8", 1, Option("C"))
+
+/**
+ * 8-bit unsigned integer.
+ */
+object u8 extends PrimitiveType("u8", 1)
+
+/**
+ * 16-bit signed integer.
+ */
+object i16 extends PrimitiveType("i16", 2)
+
+/**
+ * 16-bit unsigned integer.
+ */
+object u16 extends PrimitiveType("u16", 2)
 
 /**
  * 32-bit signed integer.
  */
-object i32 extends PrimitiveType("i32", 4)
+object i32 extends PrimitiveType("i32", 4, Option(""))
+
+/**
+ * 32-bit unsigned integer.
+ */
+object u32 extends PrimitiveType("u32", 4)
 
 /**
  * 64-bit signed integer.
  */
-object i64 extends PrimitiveType("i64", 8, "L")
+object i64 extends PrimitiveType("i64", 8, Option("L"))
+
+/**
+ * 64-bit unsigned integer.
+ */
+object u64 extends PrimitiveType("u64", 8)
 
 /**
  * 32-bit floating point.
  */
-object f32 extends PrimitiveType("f32", 4, "F")
+object f32 extends PrimitiveType("f32", 4, Option("F"))
 
 /**
  * 64-bit floating point.
  */
-object f64 extends PrimitiveType("f64", 8)
+object f64 extends PrimitiveType("f64", 8, Option(""))
 
 /**
  * Vector type.

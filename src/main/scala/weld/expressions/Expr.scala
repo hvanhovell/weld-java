@@ -81,23 +81,24 @@ case class Parameter(id: Identifier) extends ExprLike {
 case class Literal private(value: Any, dataType: PrimitiveType) extends LeafExpr {
   require(value != null)
   override def references: Seq[Expr] = Seq()
-  override def buildDesc(builder: DescBuilder): Unit = {
-    builder.append(value.toString).append(dataType.suffix)
+  override def buildDesc(builder: DescBuilder): Unit = dataType.suffixOpt match {
+    case Some(suffix) => builder.append(value.toString).append(suffix)
+    case None => builder.append(dataType.name).append("(").append(value.toString).append(")")
   }
 }
 
 object Literal {
-  def apply(value: Any): Literal = {
-    val dataType = value match {
-      case _: Boolean => bool
-      case _: Byte => i8
-      case _: Int => i32
-      case _: Long => i64
-      case _: Float => f32
-      case _: Double => f64
-      case _ => throw new IllegalArgumentException(s"Cannot create a literal for: $value")
-    }
-    Literal(value, dataType)
+  def apply(value: Any): Expr = value match {
+    case _: Boolean => Literal(value, bool)
+    case _: Byte => Literal(value, i8)
+    case _: Short => Literal(value, i16)
+    case c: Char => Literal(c.toInt, u16)
+    case _: Int => Literal(value, i32)
+    case _: Long => Literal(value, i64)
+    case _: Float => Literal(value, f32)
+    case _: Double => Literal(value, f64)
+    case b: Array[Byte] => MakeVector(b.map(Literal(_, i8)))
+    case _ => throw new IllegalArgumentException(s"Cannot create a literal for: $value")
   }
 }
 
