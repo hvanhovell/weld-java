@@ -14,6 +14,8 @@ import static weld.VecType.vecOf;
  */
 public class WeldTests {
   private WeldType i8 = i8$.MODULE$;
+  private WeldType i16 = i16$.MODULE$;
+  private WeldType u16 = u16$.MODULE$;
   private WeldType i32 = i32$.MODULE$;
   private WeldType i64 = i64$.MODULE$;
   private WeldType pointer = Pointer$.MODULE$;
@@ -22,6 +24,12 @@ public class WeldTests {
     return WeldVec.vec(values);
   }
   private WeldVec.Builder vec(byte... values) {
+    return WeldVec.vec(values);
+  }
+  private WeldVec.Builder vec(short... values) {
+    return WeldVec.vec(values);
+  }
+  private WeldVec.Builder vec(char... values) {
     return WeldVec.vec(values);
   }
   private WeldVec.Builder vec(int... values) {
@@ -227,12 +235,33 @@ public class WeldTests {
   }
 
   @Test
+  public void compileAndRun1ArgRet1() {
+    String code1 = "|x:i16| [x, x + i16(1)]";
+    try(final WeldModule module = WeldModule.compile(code1);
+        final WeldValue value = struct((short) 5).toValue();
+        final WeldValue output = module.run(value)) {
+      final WeldVec vec = output.result(vecOf(i16)).getVec(0);
+      Assert.assertEquals((short) 5, vec.getShort(0));
+      Assert.assertEquals((short) 6, vec.getShort(1));
+    }
+
+    String code2 = "|x:u16| [x, x + u16(1), x + u16(3)]";
+    try(final WeldModule module = WeldModule.compile(code2);
+        final WeldValue value = struct('a').toValue();
+        final WeldValue output = module.run(value)) {
+      final WeldVec vec = output.result(vecOf(u16)).getVec(0);
+      Assert.assertEquals('a', vec.getChar(0));
+      Assert.assertEquals('b', vec.getChar(1));
+      Assert.assertEquals('d', vec.getChar(2));
+    }
+  }
+
+  @Test
   public void compileAndRun2ArgsVecRet2() {
     doCompileAndRun2ArgsVecRet2();
   }
 
-  // See: https://github.com/weld-project/weld/issues/220
-  @Ignore
+  @Test
   public void compileAndRun2ArgsVecsRet1() {
     String code =
             "|x:i32, ys:vec[i64]|" +

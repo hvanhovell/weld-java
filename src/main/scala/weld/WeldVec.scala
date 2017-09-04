@@ -64,6 +64,24 @@ object WeldVec {
   def vec(text: String): Builder = vec(text.getBytes)
 
   /**
+   * Create a vector from a short array.
+   */
+  def vec(values: Array[Short]): Builder = new Builder(values.length, i32) {
+    override def putValues(address: Long): Unit = {
+      Platform.putShorts(address, values)
+    }
+  }
+
+  /**
+   * Create a vector from a short array.
+   */
+  def vec(values: Array[Char]): Builder = new Builder(values.length, i32) {
+    override def putValues(address: Long): Unit = {
+      Platform.putChars(address, values)
+    }
+  }
+
+  /**
    * Create a vector from a int array.
    */
   def vec(values: Array[Int]): Builder = new Builder(values.length, i32) {

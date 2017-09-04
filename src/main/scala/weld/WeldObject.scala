@@ -50,6 +50,16 @@ abstract class WeldObject(val address: Long) {
   def getByte(index: Int): Byte = Platform.getByte(indexToAddress(index, i8))
 
   /**
+   * Get the short value at the given offset.
+   */
+  def getShort(index: Int): Short = Platform.getShort(indexToAddress(index, i16))
+
+  /**
+   * Get the char value at the given offset.
+   */
+  def getChar(index: Int): Char = Platform.getChar(indexToAddress(index, u16))
+
+  /**
    * Get the int value at the given offset.
    */
   def getInt(index: Int): Int = Platform.getInt(indexToAddress(index, i32))

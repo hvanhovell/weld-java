@@ -39,6 +39,26 @@ object Platform {
     UNSAFE.copyMemory(values, Unsafe.ARRAY_BOOLEAN_BASE_OFFSET, null, address, values.length)
   }
 
+  def getShort(address: Long): Short = UNSAFE.getShort(address)
+
+  def putShort(address: Long, value: Short): Unit = {
+    UNSAFE.putShort(address, value)
+  }
+
+  def putShorts(address: Long, values: Array[Short]): Unit = {
+    UNSAFE.copyMemory(values, Unsafe.ARRAY_SHORT_BASE_OFFSET, null, address, values.length * 2)
+  }
+
+  def getChar(address: Long): Char = UNSAFE.getChar(address)
+
+  def putChar(address: Long, value: Char): Unit = {
+    UNSAFE.putChar(address, value)
+  }
+
+  def putChars(address: Long, values: Array[Char]): Unit = {
+    UNSAFE.copyMemory(values, Unsafe.ARRAY_CHAR_BASE_OFFSET, null, address, values.length * 2)
+  }
+
   def getInt(address: Long): Int = UNSAFE.getInt(address)
 
   def putInt(address: Long, value: Int): Unit = {

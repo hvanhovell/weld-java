@@ -26,6 +26,8 @@ class WeldStruct(
         fieldType match {
           case `bool` => getBoolean(i)
           case `i8` => getByte(i)
+          case `i16` => getShort(i)
+          case `u16` => getChar(i)
           case `i32` => getInt(i)
           case `i64` => getLong(i)
           case `f32` => getFloat(i)
@@ -72,6 +74,10 @@ object WeldStruct {
         Platform.putByte(address + offset, 0.toByte)
       case FieldInfo(`i8`, offset) =>
         Platform.putByte(address + offset, 0.toByte)
+      case FieldInfo(`i16`, offset) =>
+        Platform.putShort(address + offset, 0.toShort)
+      case FieldInfo(`u16`, offset) =>
+        Platform.putChar(address + offset, 0.toChar)
       case FieldInfo(`i32`, offset) =>
         Platform.putInt(address + offset, 0)
       case FieldInfo(`i64`, offset) =>
@@ -100,6 +106,8 @@ object WeldStruct {
     val fieldTypes = values.map {
       case _: Boolean => bool
       case _: Byte => i8
+      case _: Short => i16
+      case _: Char => u16
       case _: Int => i32
       case _: Long => i64
       case _: Float => f32
@@ -127,7 +135,11 @@ object WeldStruct {
             Platform.putByte(fieldAddress, if (b) 1.toByte else 0.toByte)
           case b: Byte =>
             Platform.putByte(fieldAddress, b)
-          case i: Integer =>
+          case s: Short =>
+            Platform.putShort(fieldAddress, s)
+          case c: Char =>
+            Platform.putChar(fieldAddress, c)
+          case i: Int =>
             Platform.putInt(fieldAddress, i)
           case l: Long => i64
             Platform.putLong(fieldAddress, l)
