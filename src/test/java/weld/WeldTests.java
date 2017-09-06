@@ -348,7 +348,8 @@ public class WeldTests {
     }
   }
 
-  @Test
+  // The current weldrt library has a few concurrency issues.
+  @Ignore
   public void compileAndRunConcurrent() {
     final int threads = Runtime.getRuntime().availableProcessors() + 1;
     final ExecutorService executor = Executors.newFixedThreadPool(threads);
