@@ -94,24 +94,18 @@ jar {
         platform = "osx_64"
     }
     into('META-INF/lib/' + platform) {
-      from {
-        'target/release/' + System.mapLibraryName('weld_java')
-        'target/release/' + System.mapLibraryName('weldrt')
-      }
+        from 'target/release/' + System.mapLibraryName('weld_java')
+        from 'target/release/' + System.mapLibraryName('weldrt')
     }
 
     // Attempt to copy native libraries for the various platforms to the jar.
     into('META-INF/lib/osx_64') {
-        from {
-            'target/x86_64-apple-darwin/release/libweld_java.dylib'
-            'target/x86_64-apple-darwin/release/libweldrt.dylib'
-        }
+        from 'target/x86_64-apple-darwin/release/libweld_java.dylib'
+        from 'target/x86_64-apple-darwin/release/libweldrt.dylib'
     }
     into('META-INF/lib/linux_64') {
-        from {
-            'target/x86_64-unknown-linux-gnu/release/libweld_java.so'
-            'target/x86_64-unknown-linux-gnu/release/libweldrt.so'
-        }
+        from 'target/x86_64-unknown-linux-gnu/release/libweld_java.so'
+        from 'target/x86_64-unknown-linux-gnu/release/libweldrt.so'
     }
     dependsOn compileWeld
     mustRunAfter compileWeldLinux

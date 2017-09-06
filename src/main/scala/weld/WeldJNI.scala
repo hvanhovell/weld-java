@@ -38,7 +38,7 @@ object WeldJNI {
       def copy(name: String): Path = {
         val lib = System.mapLibraryName(name)
         val libraryPath = s"$path/$lib"
-        val input = getClass.getResourceAsStream(libraryPath)
+        val input = getClass.getClassLoader.getResourceAsStream(libraryPath)
         if (input == null) {
           throw new NullPointerException(s"Cannot find resource on classpath: $libraryPath")
         }
