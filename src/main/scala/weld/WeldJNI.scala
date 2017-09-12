@@ -1,6 +1,5 @@
 package weld
 
-import java.io.File
 import java.nio.ByteBuffer
 import java.nio.file.{Files, Path, Paths}
 
@@ -56,10 +55,6 @@ object WeldJNI {
       // Load the libweld-java library
       val lib = copy("weld_java")
       System.load(lib.toString)
-
-      // Load the weld rt library
-      val rt = copy("weldrt")
-      Weld.loadLibrary(rt.toString)
     }
   }
 
@@ -73,10 +68,9 @@ object WeldJNI {
     // Try to load the library from the library path. This is easier for testing/development.
     val weldLibraryPath = System.getProperty("weld.library.path")
     if (weldLibraryPath != null) {
-      val path = Paths.get(weldLibraryPath).toAbsolutePath.toString + File.separatorChar
       try {
-        System.load(path + System.mapLibraryName("weld_java"))
-        Weld.loadLibrary(path + System.mapLibraryName("weldrt"))
+        val path = Paths.get(weldLibraryPath).toAbsolutePath
+        System.load(path.resolve(System.mapLibraryName("weld_java")).toString)
       } catch {
         case NonFatal(e) =>
           e.printStackTrace()
