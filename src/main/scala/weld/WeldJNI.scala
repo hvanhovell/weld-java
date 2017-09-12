@@ -25,6 +25,15 @@ object WeldJNI {
   }
 
   /**
+   * Load the native library both in java and in weld.
+   */
+  private def loadNativeLibrary(lib: String): Unit = {
+    System.load(lib)
+    // We need to explicitly load the weld_java library for linux.
+    Weld.loadLibrary(lib)
+  }
+
+  /**
    * Load the native libraries from the classpath.
    */
   private def loadNativeLibrariesFromClassPath(): Unit = {
@@ -53,8 +62,7 @@ object WeldJNI {
       }
 
       // Load the libweld-java library
-      val lib = copy("weld_java")
-      System.load(lib.toString)
+      loadNativeLibrary(copy("weld_java").toString)
     }
   }
 
@@ -70,10 +78,9 @@ object WeldJNI {
     if (weldLibraryPath != null) {
       try {
         val path = Paths.get(weldLibraryPath).toAbsolutePath
-        System.load(path.resolve(System.mapLibraryName("weld_java")).toString)
+        loadNativeLibrary(path.resolve(System.mapLibraryName("weld_java")).toString)
       } catch {
-        case NonFatal(e) =>
-          e.printStackTrace()
+        case _: SecurityException | _: UnsatisfiedLinkError =>
           loadNativeLibrariesFromClassPath()
       }
     } else {

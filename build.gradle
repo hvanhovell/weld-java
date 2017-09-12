@@ -15,19 +15,6 @@ dependencies {
 }
 
 /**
- * Configure the build script dependencies so we can use the NativeLibraryUtil to determine the
- * location of the locally built native library.
- */
-buildscript {
-    repositories {
-        jcenter()
-    }
-    dependencies {
-        classpath group: 'org.scijava', name: 'native-lib-loader', version: '2.1.5'
-    }
-}
-
-/**
  * Generate the JNI headers for java integration.
  */
 task generateJniHeaders(type:Exec) {
@@ -95,17 +82,14 @@ jar {
     }
     into('META-INF/lib/' + platform) {
         from 'target/release/' + System.mapLibraryName('weld_java')
-        from 'target/release/' + System.mapLibraryName('weldrt')
     }
 
     // Attempt to copy native libraries for the various platforms to the jar.
     into('META-INF/lib/osx_64') {
         from 'target/x86_64-apple-darwin/release/libweld_java.dylib'
-        from 'target/x86_64-apple-darwin/release/libweldrt.dylib'
     }
     into('META-INF/lib/linux_64') {
         from 'target/x86_64-unknown-linux-gnu/release/libweld_java.so'
-        from 'target/x86_64-unknown-linux-gnu/release/libweldrt.so'
     }
     dependsOn compileWeld
     mustRunAfter compileWeldLinux

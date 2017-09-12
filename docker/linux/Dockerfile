@@ -38,6 +38,7 @@ RUN apt-get update && \
     python \
     python-dev \
     python-pip \
+    openjdk-8-jdk-headless \
     llvm-3.8 \
     llvm-3.8-dev \
     clang-3.8 && \
