@@ -1,5 +1,3 @@
-import org.scijava.nativelib.NativeLibraryUtil
-
 apply plugin: 'scala'
 apply plugin: 'maven-publish'
 
@@ -13,21 +11,7 @@ repositories {
 
 dependencies {
     compile 'org.scala-lang:scala-library:2.11.8'
-    compile 'org.scijava:native-lib-loader:2.1.5'
     testImplementation 'junit:junit:4.12'
-}
-
-/**
- * Configure the build script dependencies so we can use the NativeLibraryUtil to determine the
- * location of the locally built native library.
- */
-buildscript {
-    repositories {
-        jcenter()
-    }
-    dependencies {
-        classpath group: 'org.scijava', name: 'native-lib-loader', version: '2.1.5'
-    }
 }
 
 /**
@@ -77,7 +61,7 @@ task compileWeldLinux(type:Exec) {
 test {
     dependsOn cleanTest
     testLogging.showStandardStreams = true
-    systemProperty 'java.library.path', 'target/release/'
+    systemProperty 'weld.library.path', 'target/release/'
 }
 
 jar {
@@ -85,24 +69,27 @@ jar {
         attributes('Implementation-Title': project.name,
                    'Implementation-Version': project.version)
     }
-    // Make sure we copy the compiled native libary to the correct location in the jar file.
-    def platform = NativeLibraryUtil.getArchitecture().name().toLowerCase()
-    def libname = NativeLibraryUtil.getPlatformLibraryName('weld_java')
-    into('META-INF/lib/' + platform) {
-      from {
-        'target/release/' + libname
-      }
+
+    // Determine the platform and extension of the regular build.
+    def arch = System.getProperty("os.arch").toLowerCase()
+    def os = System.getProperty("os.name").toLowerCase()
+    def platform = "unsupported"
+    def is64bitIntel = (arch.contains("86") || arch.contains("amd")) && arch.contains("64")
+    if (is64bitIntel && (os.contains("nux") || os.contains("nix"))) {
+        platform = "linux_64"
+    } else if (is64bitIntel && os.contains("mac")) {
+        platform = "osx_64"
     }
+    into('META-INF/lib/' + platform) {
+        from 'target/release/' + System.mapLibraryName('weld_java')
+    }
+
     // Attempt to copy native libraries for the various platforms to the jar.
     into('META-INF/lib/osx_64') {
-        from {
-            'target/x86_64-apple-darwin/release/libweld_java.dylib'
-        }
+        from 'target/x86_64-apple-darwin/release/libweld_java.dylib'
     }
     into('META-INF/lib/linux_64') {
-        from {
-            'target/x86_64-unknown-linux-gnu/release/libweld_java.so'
-        }
+        from 'target/x86_64-unknown-linux-gnu/release/libweld_java.so'
     }
     dependsOn compileWeld
     mustRunAfter compileWeldLinux

@@ -257,6 +257,17 @@ public class WeldTests {
   }
 
   @Test
+  public void compileAndRunEmptyVec() {
+    String code1 = "|x:vec[i32]| result(for([]: vec[i32], merger[i32, +], |b, i, n| merge (b, n)))";
+    WeldStruct zero = WeldStruct.zero(StructType.structOf(new VecType(i32)));
+    try(final WeldModule module = WeldModule.compile(code1);
+        final WeldValue value = zero.toValue();
+        final WeldValue output = module.run(value)) {
+      Assert.assertEquals(0,  output.result(i32).getInt(0));
+    }
+  }
+
+  @Test
   public void compileAndRun2ArgsVecRet2() {
     doCompileAndRun2ArgsVecRet2();
   }

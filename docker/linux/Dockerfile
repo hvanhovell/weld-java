@@ -35,9 +35,14 @@ RUN apt-get update && \
     openssh-client \
     libssl-dev \
     pkg-config \
+    python \
+    python-dev \
+    python-pip \
+    openjdk-8-jdk-headless \
     llvm-3.8 \
     llvm-3.8-dev \
     clang-3.8 && \
+  pip install numpy && \
   curl -sO https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init && \
   chmod +x rustup-init && \
   ./rustup-init -y --default-toolchain $RUST_VERSION --no-modify-path && \

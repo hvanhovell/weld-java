@@ -78,7 +78,7 @@ case class Parameter(id: Identifier) extends ExprLike {
   }
 }
 
-case class Literal private(value: Any, dataType: PrimitiveType) extends LeafExpr {
+case class Literal(value: Any, dataType: PrimitiveType) extends LeafExpr {
   require(value != null)
   override def references: Seq[Expr] = Seq()
   override def buildDesc(builder: DescBuilder): Unit = dataType.suffixOpt match {
