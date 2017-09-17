@@ -5,7 +5,7 @@ authors = ["Herman van Hovell <hvanhovell@databricks.com>"]
 
 [dependencies]
 libc = "0.2.0"
-weld = { git = "https://github.com/hvanhovell/weld", branch = "static-weldrt" }
+weld = { git = "https://github.com/weld-project/weld" }
 jni = { git = "https://github.com/prevoty/jni-rs" }
 regex = "*"
 
