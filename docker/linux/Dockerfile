@@ -24,7 +24,7 @@
 FROM ubuntu:17.04
 
 ENV USER root
-ENV RUST_VERSION=1.19.0
+ENV RUST_VERSION=1.21.0
 
 RUN apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
