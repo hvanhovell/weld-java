@@ -196,7 +196,7 @@ public class WeldTests {
       Assert.fail("Compilation should have failed.");
     } catch(final WeldException e) {
       Assert.assertEquals(e.code(), 3);
-      Assert.assertTrue(e.getMessage().contains("Undefined symbol foo in uniquify"));
+      Assert.assertTrue(e.getMessage().contains("Undefined symbol"));
     }
   }
 
@@ -396,88 +396,6 @@ public class WeldTests {
         final WeldValue output = module2.run(intermediate)) {
       final WeldStruct result = output.result(i64);
       Assert.assertEquals(34L, result.getLong(0));
-    }
-  }
-
-  @Test
-  public void compileAndRunPassBuilder1() {
-    String initializeCode = "||merger[i64, +]";
-    String updateCode = "|m: merger[i64, +], x: vec[i64]| for(x, m, |b, i, n| merge(b, n))";
-    String finalizeCode = "|m: merger[i64, +]| result(m)";
-    try(final WeldModule initialize = WeldModule.compile(initializeCode);
-        final WeldModule update = WeldModule.compile(updateCode);
-        final WeldModule finalize = WeldModule.compile(finalizeCode);
-        final WeldValue empty = WeldValue.empty();
-        final WeldValue buffer = initialize.run(empty)) {
-      // Get the buffer pointer.
-      final WeldPointerWrapper ptr = buffer.result(pointer).getPointer(0);
-
-      // Update the buffer in 10 increments.
-      long expected = 0;
-      for (int i = 0; i < 10; i++) {
-        try (final WeldStruct arguments = struct(ptr, vec(1L + i, 2L + i, 3L + i));
-             final WeldValue input = arguments.toValue()) {
-          final WeldValue output = update.run(input);
-          Assert.assertEquals(ptr, output.result(pointer).getPointer(0));
-          output.close();
-          expected += 6 + 3 * i;
-        }
-      }
-
-      try (final WeldValue input = struct(ptr).toValue();
-           final WeldValue output = finalize.run(input)) {
-        Assert.assertEquals(expected, output.result(i64).getLong(0));
-      }
-    }
-  }
-
-  @Test
-  public void compileAndRunPassBuilder2() {
-    String code1 = "|index: i32| let m = merger[i64, +]; merge(m, 7L)";
-    String code2 = "|index: i32, m: merger[i64, +]| let mm = merge(m, 10L); {[index, 1], [result(mm), 1L]}";
-    try(final WeldModule initialize = WeldModule.compile(code1);
-        final WeldModule finalize = WeldModule.compile(code2);
-        final WeldStruct arguments1 = struct(2);
-        final WeldValue input1 = arguments1.toValue();
-        final WeldValue appender = initialize.run(input1)) {
-      final WeldPointerWrapper ptr = appender.result(pointer).getPointer(0);
-      try (final WeldStruct arguments2 = struct(2, ptr);
-           final WeldValue input2 = arguments2.toValue();
-           final WeldValue output = finalize.run(input2)) {
-        final WeldStruct struct = output.result(vecOf(i32), vecOf(i64));
-        Assert.assertEquals(2, struct.getVec(0).getInt(0));
-        Assert.assertEquals(1, struct.getVec(0).getInt(1));
-        Assert.assertEquals(17L, struct.getVec(1).getLong(0));
-        Assert.assertEquals(1L, struct.getVec(1).getLong(1));
-      }
-    }
-  }
-
-  @Ignore
-  public void compileAndRunPassBuilder3() {
-    // This does not work.
-    String code =
-       "|first: bool, last: bool, input: dictmerger[i32, i32, +], v0: vec[i32], v1: vec[i32]|" +
-       "let buffer = if(first, dictmerger[i32, i32, +], input);" +
-       "let updated = for(zip(v0, v1), buffer, |bs, i, ns| merge(bs, {ns.$0, ns.$1}));" +
-       "{updated, if (last, tovec(result(updated: dictmerger[i32, i32, +])), [])}";
-    try(final WeldModule module = WeldModule.compile(code);
-        final WeldStruct args1 = struct(true, false, 0L, vec(1, 1, 2, 2), vec(4, 7, 9, 1));
-        final WeldValue input1 = args1.toValue();
-        final WeldValue result1 = module.run(input1)) {
-      final WeldPointerWrapper ptr = result1.result(pointer).getPointer(0);
-      for (int i = 0; i < 10; i++) {
-        final boolean last = i == 9;
-        try (final WeldStruct args = struct(false, last, ptr, vec(1, 1, 2, 3), vec(i, i + 2, i - 1, i * 8));
-             final WeldValue input = args.toValue();
-             final WeldValue result = module.run(input)) {
-          if (last) {
-            final WeldVec rows = result.result(pointer, vecOf(structOf(i32, i32))).getVec(1);
-            Assert.assertEquals(3, rows.numElements());
-          }
-        }
-      }
-
     }
   }
 }
