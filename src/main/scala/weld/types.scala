@@ -175,6 +175,14 @@ case object TimesAggregator extends Aggregator {
   override def name: String = "*"
 }
 
+case object MinAggregator extends Aggregator {
+  override def name: String = "min"
+}
+
+case object MaxAggregator extends Aggregator {
+  override def name: String = "max"
+}
+
 trait AggregatingBuilderType extends BuilderType {
   def aggregator: Aggregator
 }

@@ -36,7 +36,7 @@ case class Divide(left: Expr, right: Expr) extends BinOp {
   override protected def withNewChildren(left: Expr, right: Expr): Divide = copy(left, right)
 }
 
-case class Remainder(left: Expr, right: Expr) extends BinOp{
+case class Remainder(left: Expr, right: Expr) extends BinOp {
   override def symbol: String = "%"
   override protected def withNewChildren(left: Expr, right: Expr): Remainder = copy(left, right)
 }

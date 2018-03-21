@@ -21,10 +21,10 @@
 # This Dockerfile is an adaption of the one written by Jimmy Cuadra
 # (https://github.com/jimmycuadra/docker-rust). The main change is that we
 # depend on a different base image.
-FROM ubuntu:17.04
+FROM ubuntu:17.10
 
 ENV USER root
-ENV RUST_VERSION=1.21.0
+ENV RUST_VERSION=1.24.1
 
 RUN apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \

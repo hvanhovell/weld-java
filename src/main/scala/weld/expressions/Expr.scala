@@ -1,5 +1,7 @@
 package weld.expressions
 
+import java.util.concurrent.atomic.AtomicLong
+
 import weld._
 
 trait ExprLike extends Serializable {
@@ -97,7 +99,8 @@ object Literal {
     case _: Long => Literal(value, i64)
     case _: Float => Literal(value, f32)
     case _: Double => Literal(value, f64)
-    case b: Array[Byte] => MakeVector(b.map(Literal(_, i8)))
+    case b: Array[Byte] => MakeVector(b.map(Literal(_, u8)))
+    case s: String => MakeVector(s.getBytes.map(Literal(_, u8)))
     case _ => throw new IllegalArgumentException(s"Cannot create a literal for: $value")
   }
 }
@@ -287,17 +290,23 @@ case class Lambda(parameters: Seq[Identifier], body: Expr) extends Expr {
   }
 }
 
-// Note that this is NOT an expression because you can only use it as the input to a For expression.
 // TODO add fringe & simd versions (this requires some work on the type system).
-case class Iter(expr: Expr, startEndStride: Option[(Expr, Expr, Expr)] = None) extends ExprLike {
-  private lazy val params: Seq[Expr] = startEndStride.toSeq.flatMap(v => Seq(v._1, v._2, v._3))
+abstract class Iter extends Expr {
+  override def dataType: VecType
+}
+
+case class ScalarIter(expr: Expr, startEndStride: Option[(Expr, Expr, Expr)] = None) extends Iter {
+  protected lazy val params: Seq[Expr] = startEndStride.toSeq.flatMap(v => Seq(v._1, v._2, v._3))
+
   override def dataType: VecType = expr.dataType.asInstanceOf[VecType]
-  override def children: Seq[Expr] = Seq(expr) ++ params
+
   override def resolved: Boolean = {
     children.forall(_.resolved) &&
       expr.dataType.isInstanceOf[VecType] &&
       params.forall(_.dataType == i64)
   }
+
+  override def children: Seq[Expr] = Seq(expr) ++ params
 
   override def buildDesc(builder: DescBuilder): Unit = {
     if (startEndStride.isDefined) {
@@ -306,14 +315,42 @@ case class Iter(expr: Expr, startEndStride: Option[(Expr, Expr, Expr)] = None) e
       builder.append(expr)
     }
   }
+
+  override protected def withNewChildren(newChildren: Seq[Expr]): Expr = newChildren match {
+    case _ if newChildren.size != children.size =>
+      throw new IllegalArgumentException(
+        "Number of new children does not match the expected number " +
+          s"of children: (${newChildren.size} != ${children.size}")
+    case Seq(newExpr) =>
+      ScalarIter(newExpr)
+    case Seq(newExpr, newStart, newStop, newStride) =>
+      ScalarIter(newExpr, Option(newStart, newStop, newStride))
+  }
+}
+
+case class RangeIter(start: Expr, end: Expr, stride: Expr) extends Iter {
+  override def children: Seq[Expr] = Seq(start, end, stride)
+  override def dataType: VecType = VecType(i64)
+  override def resolved: Boolean = children.forall(c => c.resolved && c.dataType == i64)
+  override def buildDesc(builder: DescBuilder): Unit = {
+    builder.append("rangeiter(", ", ", ")", children)
+  }
+
+  override protected def withNewChildren(newChildren: Seq[Expr]): Expr = {
+    val Seq(newStart, newStop, newStride) = newChildren
+    RangeIter(newStart, newStop, newStride)
+  }
 }
 
 case class For(iters: Seq[Iter], builder: Expr, func: Expr) extends Expr {
-  override def children: Seq[Expr] = iters.map(_.expr) :+ builder :+ func
+  override def children: Seq[Expr] = iters :+ builder :+ func
 
   override def resolved: Boolean = {
     def funcIsValid: Boolean = func match {
-      case Lambda(Seq(Identifier(_, builderType), Identifier(_, `i64`), Identifier(_, valueType)), _) =>
+      case Lambda(Seq(
+             Identifier(_, builderType),
+             Identifier(_, `i64`),
+             Identifier(_, valueType)), _) =>
         builderType == builder.dataType && valueType == For.valueType(iters)
     }
     iters.nonEmpty &&
@@ -331,17 +368,14 @@ case class For(iters: Seq[Iter], builder: Expr, func: Expr) extends Expr {
     } else {
       iters.headOption.foreach(paramBuilder.append)
     }
-    paramBuilder.append(", ").newLine().append(builder).append(", ").newLine().append(func).append(")")
+    paramBuilder.append(",").newLine().append(builder).append(",").newLine().append(func).append(")")
   }
 
   override def dataType: WeldType = builder.dataType
 
   override protected def withNewChildren(children: Seq[Expr]): For = {
     val newVectors :+ newBuilder :+ newFunc = children
-    val newIters = newVectors.zip(iters).map {
-      case (vector, iter) => iter.copy(expr = vector)
-    }
-    copy(newIters, newBuilder, newFunc)
+    copy(newVectors.map(_.asInstanceOf[Iter]), newBuilder, newFunc)
   }
 }
 
@@ -385,4 +419,39 @@ case class Result(child: Expr) extends UnaryExpr with FunctionDesc {
   override def dataType: WeldType = child.dataType.asInstanceOf[BuilderType].outputType
   override def fn: String = "result"
   override protected def withNewChild(newChild: Expr): Result = copy(newChild)
+}
+
+case class Serialize(child: Expr) extends UnaryExpr with FunctionDesc {
+  override def fn: String = "serialize"
+  override def dataType: VecType = VecType(i8)
+  override protected def withNewChild(child: Expr): Expr = copy(child = child)
+}
+
+case class Deserialize(override val dataType: WeldType, child: Expr) extends UnaryExpr {
+  override def resolved: Boolean = child.resolved && child.dataType == VecType(i8)
+  override def buildDesc(builder: DescBuilder): Unit = {
+    builder.append("deserialize[").append(dataType.name).append("](").append(child).append("]")
+  }
+  override protected def withNewChild(child: Expr): Expr = copy(child = child)
+}
+
+case class Pow(left: Expr, right: Expr) extends BinaryExpr with FunctionDesc {
+  override def fn: String = "pow"
+  override def dataType: WeldType = left.dataType
+  override protected def withNewChildren(left: Expr, right: Expr): Expr = copy(left, right)
+}
+
+case class Sort(left: Expr, right: Expr) extends BinaryExpr with FunctionDesc {
+  override def resolved: Boolean = {
+    def isResolved = (left.dataType, right) match {
+      case (VecType(elementType), Lambda(Seq(Identifier(_, dt)), body)) =>
+        elementType == dt && body.dataType == i32
+      case _ => false
+    }
+    super.resolved && isResolved
+  }
+
+  override def fn: String = "sort"
+  override def dataType: WeldType = left.dataType
+  override protected def withNewChildren(left: Expr, right: Expr): Expr = copy(left, right)
 }
