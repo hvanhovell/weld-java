@@ -10,8 +10,7 @@ use jni::objects::{JByteBuffer, JObject, JString};
 use jni::sys::{jstring, jlong, jint};
 use jni::strings::*;
 
-use weld::common::WeldLogLevel;
-use weld::*;
+use weld::ffi::*;
 
 // TODO Temporary measure. We should spin this of in a different library.
 pub mod utf8lib;
@@ -27,7 +26,7 @@ pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1value_1new(_: JNIEnv, _: 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1value_1pointer(_: JNIEnv, _: JObject, valuePtr: jlong) -> jlong {
-    let value = valuePtr as *const WeldValue;
+    let value = valuePtr as WeldValueRef;
     let data = weld_value_data(value);
     data as jlong
 }
@@ -42,29 +41,29 @@ pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1get_1buffer_1pointer(env:
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1value_1run(_: JNIEnv, _: JObject, valuePtr: jlong) -> jlong {
-    let value = valuePtr as *const WeldValue;
+    let value = valuePtr as WeldValueRef;
     weld_value_run(value)
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1value_1memory_1usage(_: JNIEnv, _: JObject, valuePtr: jlong) -> jlong {
-    let value = valuePtr as *mut WeldValue;
+    let value = valuePtr as WeldValueRef;
     weld_value_memory_usage(value)
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1value_1free(_: JNIEnv, _: JObject, valuePtr: jlong) {
-    let value = valuePtr as *mut WeldValue;
+    let value = valuePtr as WeldValueRef;
     weld_value_free(value)
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1module_1compile(env: JNIEnv, _: JObject, jcode: JString, confPtr: jlong, errorPtr: jlong) -> jlong {
-    let conf = confPtr as *const WeldConf;
-    let error = errorPtr as *mut WeldError;
+    let conf = confPtr as WeldConfRef;
+    let error = errorPtr as WeldErrorRef;
     let code = env.get_string(jcode).unwrap();
     let module = weld_module_compile(code.get_raw(), conf, error);
     module as jlong
@@ -73,10 +72,10 @@ pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1module_1compile(env: JNIE
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1module_1run(_: JNIEnv, _: JObject, modulePtr: jlong, confPtr: jlong, inputPtr: jlong, errorPtr: jlong) -> jlong {
-    let module = modulePtr as *mut WeldModule;
-    let conf = confPtr as *const WeldConf;
-    let input = inputPtr as *const WeldValue;
-    let error = errorPtr as *mut WeldError;
+    let module = modulePtr as WeldModuleRef;
+    let conf = confPtr as WeldConfRef;
+    let input = inputPtr as WeldValueRef;
+    let error = errorPtr as WeldErrorRef;
     let result = weld_module_run(module, conf, input, error);
     result as jlong
 }
@@ -84,7 +83,7 @@ pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1module_1run(_: JNIEnv, _:
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1module_1free(_: JNIEnv, _: JObject, modulePtr: jlong) {
-    let module = modulePtr as *mut WeldModule;
+    let module = modulePtr as WeldModuleRef;
     weld_module_free(module)
 }
 
@@ -98,21 +97,21 @@ pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1error_1new(_: JNIEnv, _: 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1error_1free(_: JNIEnv, _: JObject, errorPtr: jlong) {
-    let error = errorPtr as *mut WeldError;
+    let error = errorPtr as WeldErrorRef;
     weld_error_free(error)
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1error_1code(_: JNIEnv, _: JObject, errorPtr: jlong) -> jint {
-    let error = errorPtr as *mut WeldError;
+    let error = errorPtr as WeldErrorRef;
     weld_error_code(error) as jint
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1error_1message(env: JNIEnv, _: JObject, errorPtr: jlong) -> jstring {
-    let error = errorPtr as *mut WeldError;
+    let error = errorPtr as WeldErrorRef;
     let message = JNIStr::from_ptr(weld_error_message(error)).to_owned();
     env.new_string(message).unwrap().into_inner()
 }
@@ -127,14 +126,14 @@ pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1conf_1new(_: JNIEnv, _: J
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1conf_1free(_: JNIEnv, _: JObject, confPtr: jlong) {
-    let conf = confPtr as *mut WeldConf;
+    let conf = confPtr as WeldConfRef;
     weld_conf_free(conf)
 }
 
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1conf_1get(env: JNIEnv, _: JObject, confPtr: jlong, jkey: JString) -> jstring {
-    let conf = confPtr as *const WeldConf;
+    let conf = confPtr as WeldConfRef;
     let key = env.get_string(jkey).unwrap();
     let valuePtr = weld_conf_get(conf, key.get_raw());
     if valuePtr.is_null() {
@@ -148,7 +147,7 @@ pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1conf_1get(env: JNIEnv, _:
 #[no_mangle]
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1conf_1set(env: JNIEnv, _: JObject, confPtr: jlong, jkey: JString, jvalue: JString) {
-    let conf = confPtr as *mut WeldConf;
+    let conf = confPtr as WeldConfRef;
     let key = env.get_string(jkey).unwrap();
     let value = env.get_string(jvalue).unwrap();
     weld_conf_set(conf, key.get_raw(), value.get_raw())
@@ -158,7 +157,7 @@ pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1conf_1set(env: JNIEnv, _:
 #[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1load_1library(env: JNIEnv, _: JObject, jfilename: JString, errorPtr: jlong) {
     let filename = env.get_string(jfilename).unwrap();
-    let error = errorPtr as *mut WeldError;
+    let error = errorPtr as WeldErrorRef;
     weld_load_library(filename.get_raw(), error)
 }
 
