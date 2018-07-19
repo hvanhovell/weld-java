@@ -430,7 +430,7 @@ case class Serialize(child: Expr) extends UnaryExpr with FunctionDesc {
 case class Deserialize(override val dataType: WeldType, child: Expr) extends UnaryExpr {
   override def resolved: Boolean = child.resolved && child.dataType == VecType(i8)
   override def buildDesc(builder: DescBuilder): Unit = {
-    builder.append("deserialize[").append(dataType.name).append("](").append(child).append("]")
+    builder.append("deserialize[").append(dataType.name).append("](").append(child).append(")")
   }
   override protected def withNewChild(child: Expr): Expr = copy(child = child)
 }
