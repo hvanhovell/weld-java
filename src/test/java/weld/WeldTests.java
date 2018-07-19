@@ -67,7 +67,7 @@ public class WeldTests {
   public void errorTest() {
     try(final WeldError error = new WeldError()) {
       Assert.assertEquals(0, error.code());
-      Assert.assertEquals("Success", error.message());
+      Assert.assertEquals("", error.message());
     }
   }
 

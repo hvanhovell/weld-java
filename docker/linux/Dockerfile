@@ -21,10 +21,10 @@
 # This Dockerfile is an adaption of the one written by Jimmy Cuadra
 # (https://github.com/jimmycuadra/docker-rust). The main change is that we
 # depend on a different base image.
-FROM ubuntu:17.10
+FROM ubuntu:18.04
 
 ENV USER root
-ENV RUST_VERSION=1.24.1
+ENV RUST_VERSION=1.27.1
 
 RUN apt-get update && \
   DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
@@ -39,14 +39,15 @@ RUN apt-get update && \
     python-dev \
     python-pip \
     openjdk-8-jdk-headless \
-    llvm-3.8 \
-    llvm-3.8-dev \
-    clang-3.8 && \
+    llvm-6.0 \
+    llvm-6.0-dev \
+    clang-6.0 \
+    zlib1g-dev && \
   pip install numpy && \
   curl -sO https://static.rust-lang.org/rustup/dist/x86_64-unknown-linux-gnu/rustup-init && \
   chmod +x rustup-init && \
   ./rustup-init -y --default-toolchain $RUST_VERSION --no-modify-path && \
-  ln -s /usr/bin/llvm-config-3.8 /usr/local/bin/llvm-config && \
+  ln -s /usr/bin/llvm-config-6.0 /usr/local/bin/llvm-config && \
   DEBIAN_FRONTEND=noninteractive apt-get remove --purge -y curl && \
   DEBIAN_FRONTEND=noninteractive apt-get autoremove -y && \
   rm -rf \
