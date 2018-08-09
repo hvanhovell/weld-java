@@ -25,6 +25,10 @@ class WeldVec(
     assert(elementType.isInstanceOf[StructType], s"Expected a struct but found a '$elementType' instead.")
     new WeldStruct(indexToAddress(index), elementType.asInstanceOf[StructType])
   }
+
+  override def toString(): String = {
+    s"WeldVec[${getElementType(0)}]($address, $numElements)"
+  }
 }
 
 object WeldVec {
