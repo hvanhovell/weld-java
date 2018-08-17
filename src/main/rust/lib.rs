@@ -17,6 +17,29 @@ pub mod utf8lib;
 
 #[no_mangle]
 #[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1context_1new(_: JNIEnv, _: JObject, confPtr: jlong) -> jlong {
+    let conf = confPtr as WeldConfRef;
+    let value = weld_context_new(conf);
+    value as jlong
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1context_1memory_1usage(_: JNIEnv, _: JObject, contextPtr: jlong) -> jlong {
+    let context = contextPtr as WeldContextRef;
+    let value = weld_context_memory_usage(context);
+    value as jlong
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1context_1free(_: JNIEnv, _: JObject, contextPtr: jlong) {
+    let context = contextPtr as WeldContextRef;
+    weld_context_free(context)
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1value_1new(_: JNIEnv, _: JObject, dataPtr: jlong) -> jlong {
     let data = dataPtr as *const c_void;
     let value = weld_value_new(data);
@@ -47,13 +70,6 @@ pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1value_1run(_: JNIEnv, _: 
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1value_1memory_1usage(_: JNIEnv, _: JObject, valuePtr: jlong) -> jlong {
-    let value = valuePtr as WeldValueRef;
-    weld_value_memory_usage(value)
-}
-
-#[no_mangle]
-#[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1value_1free(_: JNIEnv, _: JObject, valuePtr: jlong) {
     let value = valuePtr as WeldValueRef;
     weld_value_free(value)
@@ -71,12 +87,12 @@ pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1module_1compile(env: JNIE
 
 #[no_mangle]
 #[allow(non_snake_case)]
-pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1module_1run(_: JNIEnv, _: JObject, modulePtr: jlong, confPtr: jlong, inputPtr: jlong, errorPtr: jlong) -> jlong {
+pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1module_1run(_: JNIEnv, _: JObject, modulePtr: jlong, contextPtr: jlong, inputPtr: jlong, errorPtr: jlong) -> jlong {
     let module = modulePtr as WeldModuleRef;
-    let conf = confPtr as WeldConfRef;
+    let context = contextPtr as WeldContextRef;
     let input = inputPtr as WeldValueRef;
     let error = errorPtr as WeldErrorRef;
-    let result = weld_module_run(module, conf, input, error);
+    let result = weld_module_run(module, context, input, error);
     result as jlong
 }
 

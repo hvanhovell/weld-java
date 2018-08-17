@@ -9,6 +9,30 @@ extern "C" {
 #endif
 /*
  * Class:     weld_WeldJNI__
+ * Method:    weld_context_new
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_weld_WeldJNI_00024_weld_1context_1new
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     weld_WeldJNI__
+ * Method:    weld_context_free
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL Java_weld_WeldJNI_00024_weld_1context_1free
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     weld_WeldJNI__
+ * Method:    weld_context_memory_usage
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_weld_WeldJNI_00024_weld_1context_1memory_1usage
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     weld_WeldJNI__
  * Method:    weld_value_new
  * Signature: (J)J
  */
@@ -37,14 +61,6 @@ JNIEXPORT jlong JNICALL Java_weld_WeldJNI_00024_weld_1get_1buffer_1pointer
  * Signature: (J)J
  */
 JNIEXPORT jlong JNICALL Java_weld_WeldJNI_00024_weld_1value_1run
-  (JNIEnv *, jobject, jlong);
-
-/*
- * Class:     weld_WeldJNI__
- * Method:    weld_value_memory_usage
- * Signature: (J)J
- */
-JNIEXPORT jlong JNICALL Java_weld_WeldJNI_00024_weld_1value_1memory_1usage
   (JNIEnv *, jobject, jlong);
 
 /*

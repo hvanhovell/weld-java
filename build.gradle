@@ -91,6 +91,7 @@ jar {
     into('META-INF/lib/linux_64') {
         from 'target/x86_64-unknown-linux-gnu/release/libweld_java.so'
     }
+    dependsOn generateJniHeaders
     dependsOn compileWeld
     mustRunAfter compileWeldLinux
 }
