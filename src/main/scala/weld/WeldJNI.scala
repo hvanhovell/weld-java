@@ -111,6 +111,9 @@ object WeldJNI {
   private[weld] def weld_value_run(handle: Long): Long
 
   @native
+  private[weld] def weld_value_context(handle: Long): Long
+
+  @native
   private[weld] def weld_value_free(handle: Long): Unit
 
   @native

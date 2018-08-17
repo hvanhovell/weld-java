@@ -1,6 +1,6 @@
 package weld
 
-class WeldContext private(handle: Long) extends WeldManaged(handle) {
+class WeldContext (handle: Long) extends WeldManaged(handle) {
   override protected def doClose(): Unit = {
     WeldJNI.weld_context_free(handle)
   }
@@ -8,7 +8,7 @@ class WeldContext private(handle: Long) extends WeldManaged(handle) {
   /**
    * Obtain the memory usage of this context.
    */
-  def memory_usage(): Long = {
+  def getMemoryUsage: Long = {
     checkAccess()
     WeldJNI.weld_context_memory_usage(handle)
   }

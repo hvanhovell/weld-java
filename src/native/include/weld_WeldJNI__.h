@@ -65,6 +65,14 @@ JNIEXPORT jlong JNICALL Java_weld_WeldJNI_00024_weld_1value_1run
 
 /*
  * Class:     weld_WeldJNI__
+ * Method:    weld_value_context
+ * Signature: (J)J
+ */
+JNIEXPORT jlong JNICALL Java_weld_WeldJNI_00024_weld_1value_1context
+  (JNIEnv *, jobject, jlong);
+
+/*
+ * Class:     weld_WeldJNI__
  * Method:    weld_value_free
  * Signature: (J)V
  */

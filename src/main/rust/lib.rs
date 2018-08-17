@@ -56,6 +56,14 @@ pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1value_1pointer(_: JNIEnv,
 
 #[no_mangle]
 #[allow(non_snake_case)]
+pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1value_1context(_: JNIEnv, _: JObject, valuePtr: jlong) -> jlong {
+    let value = valuePtr as WeldValueRef;
+    let data = weld_value_context(value);
+    data as jlong
+}
+
+#[no_mangle]
+#[allow(non_snake_case)]
 pub unsafe extern "C" fn Java_weld_WeldJNI_00024_weld_1get_1buffer_1pointer(env: JNIEnv, _: JObject, buffer: JByteBuffer) -> jlong {
     let data = env.get_direct_buffer_address(buffer);
     data.unwrap().as_ptr() as jlong
