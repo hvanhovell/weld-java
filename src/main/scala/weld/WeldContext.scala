@@ -1,6 +1,6 @@
 package weld
 
-class WeldContext (handle: Long) extends WeldManaged(handle) {
+class WeldContext private[weld](handle: Long) extends WeldManaged(handle) {
   override protected def doClose(): Unit = {
     WeldJNI.weld_context_free(handle)
   }

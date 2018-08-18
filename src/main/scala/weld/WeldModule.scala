@@ -9,22 +9,22 @@ class WeldModule private(handle: Long) extends WeldManaged(handle) {
    * Run the module with default parameters.
    */
   def run(input: WeldValue): WeldValue = {
-    val conf = new WeldConf
-    try run(conf, input) finally {
-      conf.close()
+    val context = WeldContext.init()
+    try run(context, input) finally {
+      context.close()
     }
   }
 
   /**
    * Run the module.
    */
-  def run(conf: WeldConf, input: WeldValue): WeldValue = {
+  def run(context: WeldContext, input: WeldValue): WeldValue = {
     checkAccess()
     val error = new WeldError
     val output = new WeldValue(
       WeldJNI.weld_module_run(
         handle,
-        conf.handle,
+        context.handle,
         input.handle,
         error.handle),
       size = -1L)
