@@ -30,12 +30,16 @@ class WeldValue private[weld](handle: Long, val size: Long = -1) extends WeldMan
     WeldJNI.weld_value_run(handle)
   }
 
+
   /**
-   * Get the memory usage of the run that generated this value.
+   * Get the context of this value.
+   *
+   * The context's reference count is incremented when this method is called,
+   * and should thus be freed using `weld_context_free`.
    */
-  def getMemoryUsage: Long = {
+  def getContext: WeldContext = {
     checkAccess()
-    WeldJNI.weld_value_memory_usage(handle)
+    new WeldContext(WeldJNI.weld_value_context(handle))
   }
 
   /**

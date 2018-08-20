@@ -90,6 +90,15 @@ object WeldJNI {
   loadNativeLibraries()
 
   @native
+  private[weld] def weld_context_new(conf: Long): Long
+
+  @native
+  private[weld] def weld_context_free(handle: Long): Unit
+
+  @native
+  private[weld] def weld_context_memory_usage(handle: Long): Long
+
+  @native
   private[weld] def weld_value_new(pointer: Long): Long
 
   @native
@@ -102,7 +111,7 @@ object WeldJNI {
   private[weld] def weld_value_run(handle: Long): Long
 
   @native
-  private[weld] def weld_value_memory_usage(handle: Long): Long
+  private[weld] def weld_value_context(handle: Long): Long
 
   @native
   private[weld] def weld_value_free(handle: Long): Unit
@@ -111,7 +120,7 @@ object WeldJNI {
   private[weld] def weld_module_compile(code: String, conf: Long, error: Long): Long
 
   @native
-  private[weld] def weld_module_run(module: Long, conf: Long, input: Long, error: Long): Long
+  private[weld] def weld_module_run(module: Long, context: Long, input: Long, error: Long): Long
 
   @native
   private[weld] def weld_module_free(module: Long): Unit
