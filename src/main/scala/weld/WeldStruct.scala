@@ -34,6 +34,9 @@ class WeldStruct(
           case `f64` => getDouble(i)
           case Pointer => getPointer(i)
           case _: VecType => getVec(i)
+          // Dictionaries are pointers - represent them as such.
+          case _: DictMerger => getPointer(i)
+          case _: GroupMerger => getPointer(i)
           case _ =>
             throw new IllegalArgumentException(s"Unsupported struct field type[$i]: $fieldType")
         }

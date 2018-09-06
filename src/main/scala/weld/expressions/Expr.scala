@@ -101,7 +101,7 @@ object Literal {
     case _: Double => Literal(value, f64)
     case b: Array[Byte] => MakeVector(b.map(Literal(_, u8)))
     case s: String => MakeVector(s.getBytes.map(Literal(_, u8)))
-    case _ => throw new IllegalArgumentException(s"Cannot create a literal for: $value")
+    case _ => throw new IllegalArgumentException(s"Cannot create a literal for: $value (class=${value.getClass})")
   }
 }
 
