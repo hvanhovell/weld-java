@@ -99,4 +99,16 @@ abstract class WeldObject(val address: Long) {
     val numElements = Platform.getLong(address + 8)
     new WeldVec(pointer, elementType.asInstanceOf[VecType], numElements)
   }
+
+
+  /**
+   * Get the dictionary at the given index.
+   */
+  def getDict(index: Int): WeldDict = {
+    val elementType = getElementType(index)
+    assert(elementType.isInstanceOf[DictType], s"Expected a dictionary at index($index), but found a '$elementType' instead.")
+    val address = indexToAddress(index)
+    val pointer = Platform.getLong(address)
+    new WeldDict(pointer, elementType.asInstanceOf[DictType])
+  }
 }

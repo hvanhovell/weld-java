@@ -17,6 +17,10 @@ class WeldStruct(
   override def getElementType(index: Int): WeldType = objectType.fields(index).fieldType
   override private[weld] def indexToAddress(index: Int) = address + objectType.fields(index).offset
 
+  override def toString(): String = {
+    s"WeldStruct {${toArray.toString}}"
+  }
+
   /**
    * Turn the weld struct into an array of values.
    */
@@ -35,6 +39,7 @@ class WeldStruct(
           case Pointer => getPointer(i)
           case _: VecType => getVec(i)
           // Dictionaries are pointers - represent them as such.
+          case _: DictType => getPointer(i)
           case _: DictMerger => getPointer(i)
           case _: GroupMerger => getPointer(i)
           case _ =>
@@ -94,6 +99,8 @@ object WeldStruct {
       case FieldInfo(_: VecType, offset) =>
         Platform.putLong(address + offset, 0L)
         Platform.putLong(address + offset + 8, 0L)
+      case FieldInfo(_: DictType, offset) =>
+        Platform.putLong(address + offset, 0L)
       case FieldInfo(dt, _) =>
         Platform.freeMemory(address)
         throw new IllegalArgumentException(s"Cannot create an initial value for data type: $dt")
@@ -117,6 +124,8 @@ object WeldStruct {
       case _: Double => f64
       case vec: WeldVec =>
         vec.objectType
+      case dict: WeldDict =>
+        dict.objectType
       case builder: WeldVec.Builder =>
         vectorSize += ceil8(builder.size)
         VecType(builder.elementType)
@@ -153,6 +162,8 @@ object WeldStruct {
           case vec: WeldVec =>
             Platform.putLong(fieldAddress, vec.address)
             Platform.putLong(fieldAddress + 8, vec.numElements)
+          case dict: WeldDict =>
+            Platform.putLong(fieldAddress, dict.address)
           case builder: WeldVec.Builder =>
             Platform.putLong(fieldAddress, address + dataOffset)
             Platform.putLong(fieldAddress + 8, builder.numElements)
