@@ -195,6 +195,20 @@ case class Lookup(left: Expr, right: Expr) extends BinaryExpr with FunctionDesc 
   override protected def withNewChildren(left: Expr, right: Expr): Lookup = copy(left, right)
 }
 
+case class OptLookup(left: Expr, right: Expr) extends BinaryExpr with FunctionDesc {
+  override def fn: String = "optlookup"
+  override def resolved: Boolean = (left.dataType, right.dataType) match {
+    case _ if !super.resolved => false
+    case (DictType(keyType, _), lookupType) => keyType == lookupType
+    case _ => false
+  }
+  override def dataType: WeldType = left.dataType match {
+    case DictType(_, valueType) => StructType.structOf(bool, valueType)
+    case _ => UnknownType
+  }
+  override protected def withNewChildren(left: Expr, right: Expr): OptLookup = copy(left, right)
+}
+
 case class KeyExists(left: Expr, right: Expr) extends BinaryExpr with FunctionDesc {
   override def fn: String = "keyexists"
   override def resolved: Boolean = (left.dataType, right.dataType) match {
