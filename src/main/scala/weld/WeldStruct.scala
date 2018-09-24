@@ -94,12 +94,12 @@ object WeldStruct {
         Platform.putFloat(address + offset, 0f)
       case FieldInfo(`f64`, offset) =>
         Platform.putDouble(address + offset, 0d)
-      case FieldInfo(_: PointerType, offset) =>
-        Platform.putLong(address + offset, 0L)
       case FieldInfo(_: VecType, offset) =>
         Platform.putLong(address + offset, 0L)
         Platform.putLong(address + offset + 8, 0L)
       case FieldInfo(_: DictType, offset) =>
+        Platform.putLong(address + offset, 0L)
+      case FieldInfo(_: PointerType, offset) =>
         Platform.putLong(address + offset, 0L)
       case FieldInfo(dt, _) =>
         Platform.freeMemory(address)
